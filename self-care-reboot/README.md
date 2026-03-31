@@ -12,7 +12,9 @@ self-care-reboot/
     ├── profile_manager.py
     ├── daily_tasks.py
     ├── story_generator.py
-    └── growth_report.py
+    ├── growth_report.py
+    ├── lobster_protocol.py
+    └── pixel_renderer.py
 ```
 
 ## 部署
@@ -20,6 +22,12 @@ self-care-reboot/
 把整个 `self-care-reboot/` 文件夹拷贝到你的“龙虾/OpenClaw”技能目录下（具体路径以你的平台为准），确保运行时能找到：
 - `SKILL.md`
 - `scripts/*.py`
+
+推荐安装依赖（像素图需要 Pillow）：
+
+```bash
+pip install pillow
+```
 
 ## 脚本（CLI）用法（便于你调试）
 
@@ -59,6 +67,10 @@ python scripts/profile_manager.py init --args-json "{\"ideal\":\"自信大方\",
 python scripts/daily_tasks.py today --args-json "{\"seed\":2,\"count\":4}"
 python scripts/story_generator.py event --args-json "{\"seed\":3}"
 python scripts/story_generator.py feedback --args-json "{\"event_id\":\"scene_030\",\"choice\":\"A\"}"
-python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15}"
+python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15,\"with_image\":true,\"stage\":\"child\"}"
 ```
+
+当 `with_image=true` 且正确安装 Pillow 时，`growth_report` 的结果中会多一个：
+
+- `avatar_image_path`: 指向生成的像素风“养成自己”头像卡片 PNG 文件（默认保存在 `artifacts/self-care-reboot/` 下）
 

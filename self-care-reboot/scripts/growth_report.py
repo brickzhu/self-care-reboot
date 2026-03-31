@@ -23,6 +23,11 @@ from lobster_protocol import (
     print_json,
 )
 
+try:
+    from pixel_renderer import render_avatar  # type: ignore
+except Exception:
+    render_avatar = None
+
 ATTRS = ["confidence", "discipline", "emotion", "talent", "appearance", "social"]
 ATTR_LABEL = {
     "confidence": "自信值",
@@ -122,6 +127,8 @@ def growth_report(
     attributes: dict[str, int],
     initial_attributes: dict[str, int] | None = None,
     days: int | None = None,
+    with_image: bool = False,
+    stage: str | None = None,
 ) -> dict[str, Any]:
     report = {
         "type": "self-care-reboot.growth_report",
@@ -132,6 +139,18 @@ def growth_report(
         "badges": badges_from_attributes(attributes),
         "panel_text": build_summary_text(attributes, days=days, initial_attributes=initial_attributes),
     }
+    if with_image and render_avatar is not None:
+        from pathlib import Path
+
+        stage_text = stage or "child"
+        out_dir = Path("artifacts") / "self-care-reboot"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        avatar_path = out_dir / f"avatar_{int(days or 0):04d}.png"
+        try:
+            render_avatar(report["attributes"], stage=stage_text, output_path=str(avatar_path))
+            report["avatar_image_path"] = str(avatar_path)
+        except Exception:
+            pass
     return report
 
 
@@ -159,6 +178,8 @@ def main() -> None:
             attributes_raw = args_json.get("attributes", args.attributes)
             initial_raw = args_json.get("initial", args.initial)
             days = args_json.get("days", args.days)
+            with_image = bool(args_json.get("with_image", False))
+            stage = args_json.get("stage")
 
             if attributes_raw is None:
                 raise ValueError("Missing attributes (provide --attributes or args-json.attributes)")
@@ -168,7 +189,13 @@ def main() -> None:
             if initial_raw is not None:
                 initial = initial_raw if isinstance(initial_raw, dict) else json.loads(initial_raw)
 
-            data = growth_report(attributes=attributes, initial_attributes=initial, days=days)
+            data = growth_report(
+                attributes=attributes,
+                initial_attributes=initial,
+                days=days,
+                with_image=with_image,
+                stage=stage,
+            )
 
             if is_lobster_tool_mode():
                 print_json(

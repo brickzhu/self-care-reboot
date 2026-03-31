@@ -14,6 +14,7 @@ tools:
   - scripts/daily_tasks.py
   - scripts/story_generator.py
   - scripts/growth_report.py
+  - scripts/pixel_renderer.py
 metadata:
   openclaw:
     requires:
@@ -193,13 +194,13 @@ triggers:
    > 你的选择，藏着你想成为的样子 ✨
 
 --- 
-## 四、成长记录与反馈
+## 四、成长记录与反馈（含像素风可视化）
 ### 触发条件
 - `我的属性 / 查看进度 / 我成长了吗`
 - `成长报告 / 阶段总结`
 
-### 执行流程（调用 `scripts/growth_report.py`）
-1. **实时属性面板**
+### 执行流程（调用 `scripts/growth_report.py` + 可选调用 `scripts/pixel_renderer.py`）
+1. **实时属性面板（文本 + 可选像素卡片）**
    > 📊 你的当前成长状态
    >
    > ━━━━━━━━━━━━━━━━━━━
@@ -215,6 +216,11 @@ triggers:
    > ━━━━━━━━━━━━━━━━━━━
    >
    > 相比初始状态，你已经成长了这么多！
+
+   当环境允许生成图片（已安装 Pillow 且具备文件写入能力）时：
+   - 调用 `growth_report.py` 时带上 `with_image=true` 与阶段（如 `"stage":"child"`）
+   - 脚本会在本地生成一张像素风“养成自己”头像卡片，并在 JSON 中附带 `avatar_image_path`
+   - 上层可以将该图片作为消息的一部分发送给用户，形成“像素养成角色卡”
 
 2. **阶段解锁与徽章系统**
    当某属性达到 `100` 时解锁徽章（示例）：
