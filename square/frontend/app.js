@@ -203,225 +203,193 @@ async function refreshComments() {
 }
 
 function initWorld() {
-  const canvas = document.getElementById("world");
-  const ctx = canvas.getContext("2d");
-  let dpr = Math.max(1, window.devicePixelRatio || 1);
+  const container = document.getElementById("world");
+  container.innerHTML = "";
 
   const state = {
     posts: [],
-    booths: [],
-    // camera
-    camX: 0,
-    camY: 0,
-    zoom: 2.0, // 1..3.5
-    dragging: false,
-    dragStart: null,
-    hoverId: null,
     setPosts(items) {
-      this.posts = items;
-      // 布局：把帖子摆成一个“广场摊位环”
-      const n = items.length || 0;
-      const r = 140;
-      this.booths = items.map((p, i) => {
-        const ang = (i / Math.max(1, n)) * Math.PI * 2;
-        const x = Math.cos(ang) * r + (i % 3) * 8;
-        const y = Math.sin(ang) * r + (i % 2) * 6;
-        return { id: p.id, post: p, x, y, w: 28, h: 20 };
-      });
+      this.posts = items || [];
+      sceneRef?.refreshBooths?.(this.posts);
     },
   };
 
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.floor(rect.width * dpr);
-    canvas.height = Math.floor(rect.height * dpr);
+  let sceneRef = null;
+
+  function makeTexture(scene, key, w, h, painter) {
+    const g = scene.make.graphics({ x: 0, y: 0, add: false });
+    painter(g);
+    g.generateTexture(key, w, h);
+    g.destroy();
   }
 
-  function worldToScreen(wx, wy) {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    return {
-      x: cx + (wx - state.camX) * state.zoom * dpr,
-      y: cy + (wy - state.camY) * state.zoom * dpr,
-    };
-  }
+  class PlazaScene extends Phaser.Scene {
+    constructor() {
+      super("plaza");
+      this.booths = [];
+      this.cat = null;
+      this.tipText = null;
+    }
 
-  function screenToWorld(sx, sy) {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    return {
-      x: state.camX + (sx - cx) / (state.zoom * dpr),
-      y: state.camY + (sy - cy) / (state.zoom * dpr),
-    };
-  }
+    preload() {}
 
-  function drawTile(wx, wy, size, color1, color2) {
-    const p = worldToScreen(wx, wy);
-    const s = size * state.zoom * dpr;
-    ctx.fillStyle = (Math.floor((wx + wy) / size) % 2 === 0) ? color1 : color2;
-    ctx.fillRect(p.x, p.y, s, s);
-  }
+    create() {
+      sceneRef = this;
+      this.cameras.main.setBackgroundColor("#0b0c12");
+      this.cameras.main.setZoom(2);
+      this.cameras.main.roundPixels = true;
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // textures (procedural pixel)
+      makeTexture(this, "tileA", 16, 16, (g) => {
+        g.fillStyle(0x1a1b2a, 1).fillRect(0, 0, 16, 16);
+        g.fillStyle(0x141528, 1).fillRect(0, 0, 16, 2);
+        g.fillStyle(0x141528, 1).fillRect(0, 14, 16, 2);
+      });
+      makeTexture(this, "tileB", 16, 16, (g) => {
+        g.fillStyle(0x141528, 1).fillRect(0, 0, 16, 16);
+        g.fillStyle(0x1a1b2a, 1).fillRect(0, 0, 16, 2);
+        g.fillStyle(0x1a1b2a, 1).fillRect(0, 14, 16, 2);
+      });
+      makeTexture(this, "fountain", 32, 32, (g) => {
+        g.fillStyle(0x8ad4ff, 0.22).fillRect(0, 0, 32, 32);
+        g.fillStyle(0x8ad4ff, 0.45).fillRect(8, 8, 16, 16);
+        g.fillStyle(0xffffff, 0.2).fillRect(10, 10, 4, 4);
+      });
+      makeTexture(this, "tree", 24, 32, (g) => {
+        g.fillStyle(0x2e5c48, 1).fillRect(2, 0, 20, 18);
+        g.fillStyle(0x1a3328, 1).fillRect(6, 14, 12, 10);
+        g.fillStyle(0x5a4634, 1).fillRect(10, 22, 4, 10);
+      });
+      makeTexture(this, "bench", 32, 20, (g) => {
+        g.fillStyle(0x786046, 1).fillRect(2, 6, 28, 6);
+        g.fillStyle(0x463c36, 1).fillRect(6, 12, 4, 8);
+        g.fillStyle(0x463c36, 1).fillRect(22, 12, 4, 8);
+      });
+      makeTexture(this, "booth", 28, 20, (g) => {
+        g.fillStyle(0xb36ad9, 0.35).fillRect(0, 2, 28, 18);
+        g.lineStyle(2, 0x8ad4ff, 0.7).strokeRect(1, 3, 26, 16);
+        g.fillStyle(0xf5f5f5, 0.9).fillRect(12, 0, 4, 6);
+        g.fillStyle(0x8ad4ff, 0.85).fillRect(16, 0, 10, 4);
+      });
+      makeTexture(this, "cat", 24, 18, (g) => {
+        // body
+        g.fillStyle(0xf0c86a, 1).fillRect(6, 8, 12, 8);
+        // head
+        g.fillRect(2, 4, 8, 8);
+        // ears
+        g.fillStyle(0xd6a84f, 1).fillRect(2, 2, 2, 2);
+        g.fillRect(8, 2, 2, 2);
+        // eyes
+        g.fillStyle(0x222222, 1).fillRect(4, 7, 1, 1);
+        g.fillRect(7, 7, 1, 1);
+        // tail
+        g.fillStyle(0xd6a84f, 1).fillRect(18, 10, 4, 2);
+      });
 
-    // 背景地砖（像素感：不开抗锯齿）
-    ctx.imageSmoothingEnabled = false;
+      // tilemap (procedural grid)
+      const worldW = 60 * 16;
+      const worldH = 40 * 16;
+      for (let y = -worldH / 2; y < worldH / 2; y += 16) {
+        for (let x = -worldW / 2; x < worldW / 2; x += 16) {
+          const k = ((x + y) / 16) % 2 === 0 ? "tileA" : "tileB";
+          this.add.image(x, y, k).setOrigin(0, 0).setDepth(0);
+        }
+      }
 
-    const tile = 16;
-    const cols = Math.ceil(canvas.width / (tile * state.zoom * dpr)) + 2;
-    const rows = Math.ceil(canvas.height / (tile * state.zoom * dpr)) + 2;
-    const topLeft = screenToWorld(-tile, -tile);
+      // center fountain
+      this.add.image(0, 0, "fountain").setOrigin(0.5).setDepth(2);
 
-    for (let iy = 0; iy < rows; iy++) {
-      for (let ix = 0; ix < cols; ix++) {
-        const wx = Math.floor((topLeft.x + ix * tile) / tile) * tile;
-        const wy = Math.floor((topLeft.y + iy * tile) / tile) * tile;
-        drawTile(wx, wy, tile, "#1a1b2a", "#141528");
+      // decorations
+      const deco = [
+        { x: -90, y: -70, key: "tree" },
+        { x: 90, y: -70, key: "tree" },
+        { x: -90, y: 70, key: "tree" },
+        { x: 90, y: 70, key: "tree" },
+        { x: -40, y: 110, key: "bench" },
+        { x: 40, y: 110, key: "bench" },
+      ];
+      for (const d of deco) this.add.image(d.x, d.y, d.key).setOrigin(0.5).setDepth(3);
+
+      // cat wandering
+      this.cat = this.add.image(-120, 90, "cat").setOrigin(0.5).setDepth(10);
+      this.tweens.add({
+        targets: this.cat,
+        x: 120,
+        y: 90,
+        duration: 4500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+
+      // camera controls
+      this.input.on("wheel", (pointer, go, dx, dy) => {
+        const cam = this.cameras.main;
+        cam.setZoom(clamp(cam.zoom + (dy > 0 ? -0.15 : 0.15), 1.2, 3.6));
+      });
+
+      this.input.on("pointermove", (p) => {
+        if (!p.isDown) return;
+        const cam = this.cameras.main;
+        cam.scrollX -= (p.position.x - p.prevPosition.x) / cam.zoom;
+        cam.scrollY -= (p.position.y - p.prevPosition.y) / cam.zoom;
+      });
+
+      // hint
+      this.tipText = this.add
+        .text(12, 480, "地图空空的：点「生成示例内容」或在下方发布一条作品", {
+          fontFamily: "ui-sans-serif",
+          fontSize: "12px",
+          color: "#f5f5f5",
+          backgroundColor: "rgba(0,0,0,0.55)",
+          padding: { x: 10, y: 6 },
+        })
+        .setScrollFactor(0)
+        .setDepth(1000);
+
+      this.refreshBooths(state.posts);
+    }
+
+    refreshBooths(posts) {
+      for (const b of this.booths) b.destroy();
+      this.booths = [];
+
+      const items = posts || [];
+      const n = items.length;
+      this.tipText.setVisible(n === 0);
+      if (!n) return;
+
+      const r = 140;
+      for (let i = 0; i < n; i++) {
+        const p = items[i];
+        const ang = (i / n) * Math.PI * 2;
+        const x = Math.cos(ang) * r + (i % 3) * 10;
+        const y = Math.sin(ang) * r + (i % 2) * 8;
+        const booth = this.add.image(x, y, "booth").setOrigin(0.5).setDepth(6).setInteractive({ useHandCursor: true });
+        booth.on("pointerdown", () => openDrawer(p));
+        booth.on("pointerover", () => booth.setTint(0xffe27a));
+        booth.on("pointerout", () => booth.clearTint());
+        this.booths.push(booth);
       }
     }
-
-    // 中央喷泉（简单像素圆）
-    const c = worldToScreen(0, 0);
-    ctx.fillStyle = "rgba(138,212,255,0.18)";
-    ctx.fillRect(c.x - 20 * state.zoom * dpr, c.y - 20 * state.zoom * dpr, 40 * state.zoom * dpr, 40 * state.zoom * dpr);
-    ctx.fillStyle = "rgba(138,212,255,0.35)";
-    ctx.fillRect(c.x - 10 * state.zoom * dpr, c.y - 10 * state.zoom * dpr, 20 * state.zoom * dpr, 20 * state.zoom * dpr);
-
-    // 装饰：四棵树 + 两张长椅（即使没有帖子也不空）
-    const deco = [
-      { x: -90, y: -70, kind: "tree" },
-      { x: 90, y: -70, kind: "tree" },
-      { x: -90, y: 70, kind: "tree" },
-      { x: 90, y: 70, kind: "tree" },
-      { x: -40, y: 110, kind: "bench" },
-      { x: 40, y: 110, kind: "bench" },
-    ];
-    for (const d of deco) {
-      const p = worldToScreen(d.x, d.y);
-      const z = state.zoom * dpr;
-      if (d.kind === "tree") {
-        ctx.fillStyle = "rgba(46, 92, 72, 0.9)";
-        ctx.fillRect(p.x - 10 * z, p.y - 14 * z, 20 * z, 20 * z);
-        ctx.fillStyle = "rgba(26, 51, 40, 0.9)";
-        ctx.fillRect(p.x - 6 * z, p.y + 6 * z, 12 * z, 10 * z);
-        ctx.fillStyle = "rgba(90, 70, 52, 0.95)";
-        ctx.fillRect(p.x - 3 * z, p.y + 12 * z, 6 * z, 14 * z);
-      } else {
-        ctx.fillStyle = "rgba(120, 96, 70, 0.95)";
-        ctx.fillRect(p.x - 14 * z, p.y - 4 * z, 28 * z, 8 * z);
-        ctx.fillStyle = "rgba(70, 60, 54, 0.95)";
-        ctx.fillRect(p.x - 12 * z, p.y + 4 * z, 4 * z, 10 * z);
-        ctx.fillRect(p.x + 8 * z, p.y + 4 * z, 4 * z, 10 * z);
-      }
-    }
-
-    // 摊位/告示牌
-    for (const b of state.booths) {
-      const p = worldToScreen(b.x, b.y);
-      const w = b.w * state.zoom * dpr;
-      const h = b.h * state.zoom * dpr;
-
-      const isHover = state.hoverId === b.id;
-      ctx.fillStyle = isHover ? "rgba(255,226,122,0.35)" : "rgba(179,106,217,0.25)";
-      ctx.fillRect(p.x - w / 2, p.y - h / 2, w, h);
-      ctx.strokeStyle = isHover ? "rgba(255,226,122,0.85)" : "rgba(138,212,255,0.55)";
-      ctx.lineWidth = 2 * dpr;
-      ctx.strokeRect(p.x - w / 2, p.y - h / 2, w, h);
-
-      // 小旗帜
-      ctx.fillStyle = "rgba(245,245,245,0.9)";
-      ctx.fillRect(p.x - 2 * dpr, p.y - h / 2 - 10 * state.zoom * dpr, 4 * dpr, 10 * state.zoom * dpr);
-      ctx.fillStyle = isHover ? "rgba(255,226,122,0.9)" : "rgba(138,212,255,0.85)";
-      ctx.fillRect(p.x + 2 * dpr, p.y - h / 2 - 10 * state.zoom * dpr, 10 * state.zoom * dpr, 6 * state.zoom * dpr);
-    }
-
-    // 悬浮提示
-    if (state.hoverId) {
-      const b = state.booths.find((x) => x.id === state.hoverId);
-      if (b) {
-        const p = worldToScreen(b.x, b.y);
-        const title = (b.post.title || "（无标题）").slice(0, 16);
-        ctx.font = `${12 * dpr}px ui-sans-serif`;
-        const pad = 6 * dpr;
-        const tw = ctx.measureText(title).width;
-        ctx.fillStyle = "rgba(0,0,0,0.65)";
-        ctx.fillRect(p.x - tw / 2 - pad, p.y - 34 * dpr, tw + pad * 2, 20 * dpr);
-        ctx.fillStyle = "rgba(245,245,245,0.95)";
-        ctx.fillText(title, p.x - tw / 2, p.y - 20 * dpr);
-      }
-    }
-
-    // 没有帖子时的提示
-    if (!state.booths.length) {
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(12 * dpr, canvas.height - 44 * dpr, canvas.width - 24 * dpr, 32 * dpr);
-      ctx.fillStyle = "rgba(245,245,245,0.95)";
-      ctx.font = `${12 * dpr}px ui-sans-serif`;
-      ctx.fillText("地图空空的：点「生成示例内容」或在下方发布一条作品", 22 * dpr, canvas.height - 24 * dpr);
-    }
-
-    requestAnimationFrame(draw);
   }
 
-  function hitTest(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = (clientX - rect.left) * dpr;
-    const sy = (clientY - rect.top) * dpr;
-    const wpos = screenToWorld(sx, sy);
-    for (const b of state.booths) {
-      if (
-        wpos.x >= b.x - b.w / 2 &&
-        wpos.x <= b.x + b.w / 2 &&
-        wpos.y >= b.y - b.h / 2 &&
-        wpos.y <= b.y + b.h / 2
-      ) {
-        return b;
-      }
-    }
-    return null;
-  }
+  const config = {
+    type: Phaser.AUTO,
+    parent: "world",
+    width: container.clientWidth || 980,
+    height: container.clientHeight || 520,
+    pixelArt: true,
+    backgroundColor: "#0b0c12",
+    scene: [PlazaScene],
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+  };
 
-  canvas.addEventListener("mousemove", (e) => {
-    if (state.dragging && state.dragStart) {
-      const dx = (e.clientX - state.dragStart.x) / state.zoom;
-      const dy = (e.clientY - state.dragStart.y) / state.zoom;
-      state.camX = state.dragStart.camX - dx;
-      state.camY = state.dragStart.camY - dy;
-      state.hoverId = null;
-      return;
-    }
-    const b = hitTest(e.clientX, e.clientY);
-    state.hoverId = b ? b.id : null;
-  });
-
-  canvas.addEventListener("mousedown", (e) => {
-    state.dragging = true;
-    state.dragStart = { x: e.clientX, y: e.clientY, camX: state.camX, camY: state.camY };
-  });
-  window.addEventListener("mouseup", () => {
-    state.dragging = false;
-    state.dragStart = null;
-  });
-
-  canvas.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.15 : 0.15;
-    state.zoom = clamp(state.zoom + delta, 1.2, 3.6);
-  }, { passive: false });
-
-  canvas.addEventListener("click", (e) => {
-    const b = hitTest(e.clientX, e.clientY);
-    if (b) openDrawer(b.post);
-  });
-
-  window.addEventListener("resize", () => {
-    dpr = Math.max(1, window.devicePixelRatio || 1);
-    resize();
-  });
-
-  resize();
-  requestAnimationFrame(draw);
+  // eslint-disable-next-line no-undef
+  new Phaser.Game(config);
   return state;
 }
 
