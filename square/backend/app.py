@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import secrets
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
+
+
+APP_ROOT = Path(__file__).resolve().parent
+SQUARE_ROOT = APP_ROOT.parent
+DATA_DIR = SQUARE_ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "square.json"
+
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def load_db() -> dict[str, Any]:
+    if not DB_PATH.exists():
+        return {"posts": [], "comments": [], "likes": [], "bans": []}
+    with DB_PATH.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_db(db: dict[str, Any]) -> None:
+    tmp = DB_PATH.with_suffix(".json.tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(db, f, ensure_ascii=False, indent=2)
+    tmp.replace(DB_PATH)
+
+
+def new_id(prefix: str) -> str:
+    return f"{prefix}_{secrets.token_hex(8)}"
+
+
+def get_client_user_id() -> str:
+    # 先用 header（未来可接 OpenClaw trusted-proxy 的 x-forwarded-user）
+    uid = request.headers.get("x-user-id") or request.headers.get("x-forwarded-user")
+    if uid:
+        return uid.strip()
+    # 最小可用：匿名访客
+    return "anon"
+
+
+def sanitize_text(s: str, *, max_len: int = 200) -> str:
+    s = (s or "").strip()
+    if len(s) > max_len:
+        s = s[:max_len]
+    return s
+
+
+app = Flask(__name__, static_folder=str(SQUARE_ROOT / "frontend"), static_url_path="/")
+CORS(app)
+
+
+@app.get("/health")
+def health():
+    return jsonify({"ok": True})
+
+
+@app.get("/")
+def index():
+    # 直接返回静态前端
+    return send_from_directory(app.static_folder, "index.html")
+
+
+@app.get("/api/v1/feed")
+def feed():
+    db = load_db()
+    posts = list(db.get("posts", []))
+    posts.sort(key=lambda p: p.get("createdAtMs", 0), reverse=True)
+
+    limit = int(request.args.get("limit", "50"))
+    limit = max(1, min(200, limit))
+    cursor = request.args.get("cursor")
+
+    if cursor:
+        try:
+            cursor_ms = int(cursor)
+            posts = [p for p in posts if int(p.get("createdAtMs", 0)) < cursor_ms]
+        except ValueError:
+            pass
+
+    posts = posts[:limit]
+
+    # 聚合点赞/评论数量
+    likes = db.get("likes", [])
+    comments = db.get("comments", [])
+    like_count = {}
+    for l in likes:
+        pid = l.get("postId")
+        like_count[pid] = like_count.get(pid, 0) + 1
+    comment_count = {}
+    for c in comments:
+        pid = c.get("postId")
+        comment_count[pid] = comment_count.get(pid, 0) + 1
+
+    out = []
+    for p in posts:
+        pid = p["id"]
+        out.append(
+            {
+                **p,
+                "likeCount": like_count.get(pid, 0),
+                "commentCount": comment_count.get(pid, 0),
+            }
+        )
+
+    next_cursor = str(out[-1]["createdAtMs"]) if out else None
+    return jsonify({"items": out, "nextCursor": next_cursor})
+
+
+@app.post("/api/v1/posts")
+def create_post():
+    db = load_db()
+    body = request.get_json(force=True, silent=False) or {}
+
+    # 类型：pixel_strip / avatar_card / match_report 等
+    post_type = sanitize_text(body.get("type", "pixel_strip"), max_len=32)
+    title = sanitize_text(body.get("title", ""), max_len=60)
+    text = sanitize_text(body.get("text", ""), max_len=300)
+    tags = body.get("tags") or []
+    if not isinstance(tags, list):
+        tags = []
+    tags = [sanitize_text(str(t), max_len=24) for t in tags][:8]
+
+    # renderSpec 用于将来“可再现渲染”（像素分镜参数），也可存 imageUrl
+    render_spec = body.get("renderSpec")
+    image_url = sanitize_text(body.get("imageUrl", ""), max_len=500)
+
+    uid = get_client_user_id()
+    post = {
+        "id": new_id("post"),
+        "type": post_type,
+        "title": title,
+        "text": text,
+        "tags": tags,
+        "renderSpec": render_spec,
+        "imageUrl": image_url,
+        "author": {"userId": uid, "displayName": sanitize_text(body.get("displayName", "匿名小龙虾"), max_len=16)},
+        "createdAtMs": now_ms(),
+    }
+    db["posts"].append(post)
+    save_db(db)
+    return jsonify({"ok": True, "item": post})
+
+
+@app.post("/api/v1/posts/<post_id>/like")
+def like_post(post_id: str):
+    db = load_db()
+    uid = get_client_user_id()
+
+    # 去重：同一 user 对同一 post 只记一次
+    for l in db.get("likes", []):
+        if l.get("postId") == post_id and l.get("userId") == uid:
+            return jsonify({"ok": True, "liked": True})
+
+    db.setdefault("likes", []).append({"id": new_id("like"), "postId": post_id, "userId": uid, "createdAtMs": now_ms()})
+    save_db(db)
+    return jsonify({"ok": True, "liked": True})
+
+
+@app.get("/api/v1/posts/<post_id>/comments")
+def list_comments(post_id: str):
+    db = load_db()
+    items = [c for c in db.get("comments", []) if c.get("postId") == post_id]
+    items.sort(key=lambda c: c.get("createdAtMs", 0))
+    return jsonify({"items": items})
+
+
+@app.post("/api/v1/posts/<post_id>/comments")
+def add_comment(post_id: str):
+    db = load_db()
+    body = request.get_json(force=True, silent=False) or {}
+    uid = get_client_user_id()
+
+    text = sanitize_text(body.get("text", ""), max_len=200)
+    if not text:
+        return jsonify({"ok": False, "error": {"message": "empty comment"}}), 400
+
+    item = {
+        "id": new_id("cmt"),
+        "postId": post_id,
+        "author": {"userId": uid, "displayName": sanitize_text(body.get("displayName", "匿名小龙虾"), max_len=16)},
+        "text": text,
+        "createdAtMs": now_ms(),
+    }
+    db.setdefault("comments", []).append(item)
+    save_db(db)
+    return jsonify({"ok": True, "item": item})
+
+
+@app.get("/static/<path:filename>")
+def static_files(filename: str):
+    return send_from_directory(app.static_folder, filename)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("SQUARE_PORT", "19100"))
+    host = os.environ.get("SQUARE_HOST", "127.0.0.1")
+    app.run(host=host, port=port, debug=True)
+
