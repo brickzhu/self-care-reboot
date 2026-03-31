@@ -8,6 +8,7 @@
   --pri: #8ad4ff;
   --pri2: #b36ad9;
   --good: #ffe27a;
+  --pixel: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 * { box-sizing: border-box; }
@@ -108,7 +109,35 @@ body {
   border-radius: 12px;
   padding: 14px;
 }
-.card__title { font-weight: 700; margin-bottom: 10px; color: #e9ecff; }
+.card__title { font-weight: 900; margin-bottom: 10px; color: #e9ecff; font-family: var(--pixel); font-size: 12px; letter-spacing: 0.5px; }
+
+/* pixel frame (inspired by Star Office UI) */
+.card, .world__wrap, .drawer {
+  position: relative;
+}
+.card::before, .world__wrap::before, .drawer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
+    linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
+    linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
+    linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f);
+  background-repeat: no-repeat;
+  background-size:
+    calc(50% - 14px) 2px, calc(50% - 14px) 2px,
+    2px calc(50% - 14px), 2px calc(50% - 14px),
+    calc(50% - 14px) 2px, calc(50% - 14px) 2px,
+    2px calc(50% - 14px), 2px calc(50% - 14px);
+  background-position:
+    9px 8px, calc(50% + 5px) 8px,
+    8px 9px, calc(100% - 10px) 9px,
+    9px calc(100% - 10px), calc(50% + 5px) calc(100% - 10px),
+    8px calc(50% + 5px), calc(100% - 10px) calc(50% + 5px);
+  opacity: 0.9;
+}
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -137,6 +166,7 @@ body {
   cursor: pointer;
 }
 .btn:hover { border-color: rgba(138, 212, 255, 0.4); }
+.btn { font-family: var(--pixel); font-size: 11px; }
 .btn--primary {
   background: linear-gradient(135deg, rgba(138, 212, 255, 0.18), rgba(179, 106, 217, 0.18));
   border-color: rgba(138, 212, 255, 0.45);

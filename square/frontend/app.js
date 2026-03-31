@@ -265,11 +265,37 @@ function initWorld() {
         g.fillStyle(0x463c36, 1).fillRect(6, 12, 4, 8);
         g.fillStyle(0x463c36, 1).fillRect(22, 12, 4, 8);
       });
-      makeTexture(this, "booth", 28, 20, (g) => {
-        g.fillStyle(0xb36ad9, 0.35).fillRect(0, 2, 28, 18);
-        g.lineStyle(2, 0x8ad4ff, 0.7).strokeRect(1, 3, 26, 16);
-        g.fillStyle(0xf5f5f5, 0.9).fillRect(12, 0, 4, 6);
-        g.fillStyle(0x8ad4ff, 0.85).fillRect(16, 0, 10, 4);
+      // 市集摊位（更热闹）
+      makeTexture(this, "stall", 44, 28, (g) => {
+        g.fillStyle(0x2a2d3d, 1).fillRect(0, 18, 44, 10);
+        g.fillStyle(0x8ad4ff, 0.18).fillRect(2, 20, 40, 6);
+        g.fillStyle(0xb36ad9, 0.22).fillRect(2, 8, 40, 10);
+        g.lineStyle(2, 0x8ad4ff, 0.65).strokeRect(1, 8, 42, 19);
+        // 顶棚条纹
+        for (let x = 2; x < 42; x += 6) {
+          g.fillStyle(0xffe27a, 0.65).fillRect(x, 2, 3, 6);
+          g.fillStyle(0xe94560, 0.45).fillRect(x + 3, 2, 3, 6);
+        }
+        g.fillStyle(0x111218, 1).fillRect(2, 0, 40, 2);
+        // 旗帜
+        g.fillStyle(0xf5f5f5, 0.9).fillRect(6, 0, 2, 8);
+        g.fillStyle(0x8ad4ff, 0.85).fillRect(8, 0, 10, 4);
+      });
+      // 小龙虾 NPC（像素摊主）
+      makeTexture(this, "shrimp", 18, 14, (g) => {
+        g.fillStyle(0xff7a7a, 0.95).fillRect(3, 6, 10, 6); // body
+        g.fillRect(1, 7, 2, 2); // claw L
+        g.fillRect(13, 7, 2, 2); // claw R
+        g.fillStyle(0x222222, 1).fillRect(5, 8, 1, 1); // eye
+        g.fillRect(9, 8, 1, 1);
+        g.fillStyle(0xffe27a, 0.9).fillRect(6, 12, 4, 1); // smile-ish
+      });
+      // 路灯
+      makeTexture(this, "lamp", 10, 28, (g) => {
+        g.fillStyle(0x463c36, 1).fillRect(4, 8, 2, 20);
+        g.fillStyle(0x2a2d3d, 1).fillRect(2, 6, 6, 4);
+        g.fillStyle(0xffe27a, 0.8).fillRect(3, 0, 4, 6);
+        g.fillStyle(0xffe27a, 0.25).fillRect(1, 2, 8, 10);
       });
       makeTexture(this, "cat", 24, 18, (g) => {
         // body
@@ -286,27 +312,37 @@ function initWorld() {
         g.fillStyle(0xd6a84f, 1).fillRect(18, 10, 4, 2);
       });
 
-      // tilemap (procedural grid)
-      const worldW = 60 * 16;
-      const worldH = 40 * 16;
+      // 市集街区地砖 + 主街道
+      const worldW = 72 * 16;
+      const worldH = 44 * 16;
       for (let y = -worldH / 2; y < worldH / 2; y += 16) {
         for (let x = -worldW / 2; x < worldW / 2; x += 16) {
           const k = ((x + y) / 16) % 2 === 0 ? "tileA" : "tileB";
           this.add.image(x, y, k).setOrigin(0, 0).setDepth(0);
         }
       }
+      // 主街道（更亮一些）
+      const roadY0 = -24;
+      const roadH = 80;
+      const roadW = worldW - 80;
+      const road = this.add.rectangle(0, roadY0 + roadH / 2, roadW, roadH, 0x111218, 0.55).setDepth(1);
+      this.add.rectangle(0, roadY0 + roadH / 2, roadW - 8, roadH - 8, 0x1a1b2a, 0.55).setDepth(1);
 
       // center fountain
       this.add.image(0, 0, "fountain").setOrigin(0.5).setDepth(2);
 
       // decorations
       const deco = [
-        { x: -90, y: -70, key: "tree" },
-        { x: 90, y: -70, key: "tree" },
-        { x: -90, y: 70, key: "tree" },
-        { x: 90, y: 70, key: "tree" },
-        { x: -40, y: 110, key: "bench" },
-        { x: 40, y: 110, key: "bench" },
+        { x: -170, y: -90, key: "tree" },
+        { x: 170, y: -90, key: "tree" },
+        { x: -170, y: 120, key: "tree" },
+        { x: 170, y: 120, key: "tree" },
+        { x: -60, y: 140, key: "bench" },
+        { x: 60, y: 140, key: "bench" },
+        { x: -140, y: 16, key: "lamp" },
+        { x: 140, y: 16, key: "lamp" },
+        { x: -60, y: -44, key: "lamp" },
+        { x: 60, y: -44, key: "lamp" },
       ];
       for (const d of deco) this.add.image(d.x, d.y, d.key).setOrigin(0.5).setDepth(3);
 
@@ -316,11 +352,26 @@ function initWorld() {
         targets: this.cat,
         x: 120,
         y: 90,
-        duration: 4500,
+        duration: 4200,
         yoyo: true,
         repeat: -1,
         ease: "Sine.inOut",
       });
+      // 市集招牌（分区）
+      const mkLabel = (x, y, text) =>
+        this.add
+          .text(x, y, text, {
+            fontFamily: "Press Start 2P, ui-monospace, monospace",
+            fontSize: "10px",
+            color: "#ffe27a",
+            backgroundColor: "rgba(0,0,0,0.35)",
+            padding: { x: 6, y: 4 },
+          })
+          .setDepth(20);
+      mkLabel(-220, -150, "STRIP ST");
+      mkLabel(160, -150, "AVATAR ST");
+      mkLabel(-220, 170, "MATCH ST");
+      mkLabel(160, 170, "STAGE");
 
       // camera controls
       this.input.on("wheel", (pointer, go, dx, dy) => {
@@ -359,17 +410,55 @@ function initWorld() {
       this.tipText.setVisible(n === 0);
       if (!n) return;
 
-      const r = 140;
-      for (let i = 0; i < n; i++) {
-        const p = items[i];
-        const ang = (i / n) * Math.PI * 2;
-        const x = Math.cos(ang) * r + (i % 3) * 10;
-        const y = Math.sin(ang) * r + (i % 2) * 8;
-        const booth = this.add.image(x, y, "booth").setOrigin(0.5).setDepth(6).setInteractive({ useHandCursor: true });
-        booth.on("pointerdown", () => openDrawer(p));
-        booth.on("pointerover", () => booth.setTint(0xffe27a));
-        booth.on("pointerout", () => booth.clearTint());
-        this.booths.push(booth);
+      // 市集街区：按 type 分区摆摊
+      const zoneOf = (p) => {
+        const t = (p.type || "").toLowerCase();
+        if (t.includes("avatar")) return "avatar";
+        if (t.includes("match")) return "match";
+        return "strip";
+      };
+      const zones = {
+        strip: { x0: -220, y0: -110, cols: 4, dx: 64, dy: 52 },
+        avatar: { x0: 120, y0: -110, cols: 4, dx: 64, dy: 52 },
+        match: { x0: -220, y0: 110, cols: 4, dx: 64, dy: 52 },
+        stage: { x0: 120, y0: 110, cols: 4, dx: 64, dy: 52 },
+      };
+      const idx = { strip: 0, avatar: 0, match: 0, stage: 0 };
+
+      for (const p of items) {
+        const z = zoneOf(p);
+        const zc = zones[z] || zones.strip;
+        const i = idx[z]++;
+        const col = i % zc.cols;
+        const row = Math.floor(i / zc.cols);
+        const x = zc.x0 + col * zc.dx + (row % 2) * 6;
+        const y = zc.y0 + row * zc.dy;
+
+        const stall = this.add.image(x, y, "stall").setOrigin(0.5).setDepth(6).setInteractive({ useHandCursor: true });
+        stall.on("pointerdown", () => openDrawer(p));
+        stall.on("pointerover", () => stall.setTint(0xffe27a));
+        stall.on("pointerout", () => stall.clearTint());
+
+        const npc = this.add.image(x - 18, y + 10, "shrimp").setOrigin(0.5).setDepth(7);
+        this.tweens.add({ targets: npc, y: y + 8, duration: 700 + (i % 5) * 60, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+
+        // 气泡标题（短）
+        const title = (p.title || "（无标题）").slice(0, 12);
+        const bubble = this.add
+          .text(x - 6, y - 24, title, {
+            fontFamily: "ui-sans-serif",
+            fontSize: "11px",
+            color: "#f5f5f5",
+            backgroundColor: "rgba(0,0,0,0.55)",
+            padding: { x: 6, y: 4 },
+          })
+          .setDepth(8);
+
+        // 点击气泡也打开
+        bubble.setInteractive({ useHandCursor: true });
+        bubble.on("pointerdown", () => openDrawer(p));
+
+        this.booths.push(stall, npc, bubble);
       }
     }
   }
