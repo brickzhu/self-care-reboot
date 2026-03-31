@@ -1,13 +1,14 @@
 :root {
-  --bg: #0f1018;
-  --panel: #171821;
-  --panel2: #1c1e2a;
+  /* Star Office UI-like palette */
+  --bg: #1a1a2e;
+  --panel: #141722;
+  --panel2: #111218;
   --text: #f5f5f5;
-  --muted: #a9b0c3;
-  --line: #2a2d3d;
-  --pri: #8ad4ff;
-  --pri2: #b36ad9;
-  --good: #ffe27a;
+  --muted: #cbd5e1;
+  --line: #0e1119;
+  --pri: #e94560;
+  --pri2: #ffd700;
+  --good: #ffd700;
   --pixel: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -15,7 +16,7 @@
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: radial-gradient(1200px 800px at 20% 10%, #1e2342 0%, var(--bg) 60%);
+  background: var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
@@ -25,7 +26,7 @@ body {
   position: sticky; top: 0;
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px;
-  background: rgba(15,16,24,0.9);
+  background: rgba(26, 26, 46, 0.92);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(10px);
 }
@@ -34,7 +35,7 @@ body {
   width: 34px; height: 34px;
   display: grid; place-items: center;
   border: 1px solid var(--line);
-  background: linear-gradient(135deg, #1a1b2a, #111218);
+  background: #141722;
   color: var(--good);
   font-weight: 800;
 }
@@ -43,7 +44,7 @@ body {
 .topbar__actions { display: flex; gap: 8px; }
 
 .main {
-  width: min(980px, 100%);
+  width: min(1280px, 100%);
   margin: 0 auto;
   padding: 18px 16px 48px;
   display: grid;
@@ -58,13 +59,13 @@ body {
   margin-top: 10px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(138, 212, 255, 0.25);
-  background: #0b0c12;
+  border: 4px solid var(--line);
+  background: #1a1a2e;
 }
 .world__canvas {
   display: block;
   width: 100%;
-  height: 520px;
+  height: 720px;
   image-rendering: pixelated;
 }
 
@@ -75,8 +76,8 @@ body {
   width: min(380px, calc(100% - 20px));
   max-height: calc(100% - 20px);
   overflow: auto;
-  background: rgba(23, 24, 33, 0.94);
-  border: 1px solid var(--line);
+  background: rgba(20, 23, 34, 0.96);
+  border: 2px solid #22c55e;
   border-radius: 12px;
   padding: 12px;
   backdrop-filter: blur(10px);
@@ -105,7 +106,7 @@ body {
 
 .card {
   background: linear-gradient(180deg, var(--panel), var(--panel2));
-  border: 1px solid var(--line);
+  border: 4px solid var(--line);
   border-radius: 12px;
   padding: 14px;
 }
@@ -168,8 +169,9 @@ body {
 .btn:hover { border-color: rgba(138, 212, 255, 0.4); }
 .btn { font-family: var(--pixel); font-size: 11px; }
 .btn--primary {
-  background: linear-gradient(135deg, rgba(138, 212, 255, 0.18), rgba(179, 106, 217, 0.18));
-  border-color: rgba(138, 212, 255, 0.45);
+  background: linear-gradient(90deg, #e94560, #ffd700);
+  border-color: #555;
+  color: #141722;
 }
 .btn--ghost { background: transparent; }
 
@@ -224,6 +226,6 @@ body {
   .grid { grid-template-columns: 1fr; }
   .post { grid-template-columns: 1fr; }
   .thumb { width: 100%; height: 180px; }
-  .world__canvas { height: 420px; }
+  .world__canvas { height: 520px; }
 }
 

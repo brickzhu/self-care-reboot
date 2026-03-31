@@ -235,20 +235,20 @@ function initWorld() {
 
     create() {
       sceneRef = this;
-      this.cameras.main.setBackgroundColor("#0b0c12");
+      this.cameras.main.setBackgroundColor("#1a1a2e");
       this.cameras.main.setZoom(2);
       this.cameras.main.roundPixels = true;
 
       // textures (procedural pixel)
       makeTexture(this, "tileA", 16, 16, (g) => {
-        g.fillStyle(0x1a1b2a, 1).fillRect(0, 0, 16, 16);
-        g.fillStyle(0x141528, 1).fillRect(0, 0, 16, 2);
-        g.fillStyle(0x141528, 1).fillRect(0, 14, 16, 2);
+        g.fillStyle(0x1a1a2e, 1).fillRect(0, 0, 16, 16);
+        g.fillStyle(0x151522, 1).fillRect(0, 0, 16, 2);
+        g.fillStyle(0x151522, 1).fillRect(0, 14, 16, 2);
       });
       makeTexture(this, "tileB", 16, 16, (g) => {
-        g.fillStyle(0x141528, 1).fillRect(0, 0, 16, 16);
-        g.fillStyle(0x1a1b2a, 1).fillRect(0, 0, 16, 2);
-        g.fillStyle(0x1a1b2a, 1).fillRect(0, 14, 16, 2);
+        g.fillStyle(0x151522, 1).fillRect(0, 0, 16, 16);
+        g.fillStyle(0x1a1a2e, 1).fillRect(0, 0, 16, 2);
+        g.fillStyle(0x1a1a2e, 1).fillRect(0, 14, 16, 2);
       });
       makeTexture(this, "fountain", 32, 32, (g) => {
         g.fillStyle(0x8ad4ff, 0.22).fillRect(0, 0, 32, 32);
@@ -326,7 +326,7 @@ function initWorld() {
       const roadH = 80;
       const roadW = worldW - 80;
       const road = this.add.rectangle(0, roadY0 + roadH / 2, roadW, roadH, 0x111218, 0.55).setDepth(1);
-      this.add.rectangle(0, roadY0 + roadH / 2, roadW - 8, roadH - 8, 0x1a1b2a, 0.55).setDepth(1);
+      this.add.rectangle(0, roadY0 + roadH / 2, roadW - 8, roadH - 8, 0x1a1a2e, 0.55).setDepth(1);
 
       // center fountain
       this.add.image(0, 0, "fountain").setOrigin(0.5).setDepth(2);
@@ -363,7 +363,7 @@ function initWorld() {
           .text(x, y, text, {
             fontFamily: "Press Start 2P, ui-monospace, monospace",
             fontSize: "10px",
-            color: "#ffe27a",
+            color: "#ffd700",
             backgroundColor: "rgba(0,0,0,0.35)",
             padding: { x: 6, y: 4 },
           })
