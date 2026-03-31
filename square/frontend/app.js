@@ -139,6 +139,16 @@ async function post() {
   }
 }
 
+async function demo() {
+  const hint = document.getElementById("postHint");
+  try {
+    await api("/api/v1/demo", { method: "POST", body: "{}" });
+    await refresh();
+  } catch (e) {
+    hint.textContent = `生成示例失败：${e.message}`;
+  }
+}
+
 function pill(text) {
   const s = document.createElement("span");
   s.className = "pill";
@@ -278,6 +288,34 @@ function initWorld() {
     ctx.fillStyle = "rgba(138,212,255,0.35)";
     ctx.fillRect(c.x - 10 * state.zoom * dpr, c.y - 10 * state.zoom * dpr, 20 * state.zoom * dpr, 20 * state.zoom * dpr);
 
+    // 装饰：四棵树 + 两张长椅（即使没有帖子也不空）
+    const deco = [
+      { x: -90, y: -70, kind: "tree" },
+      { x: 90, y: -70, kind: "tree" },
+      { x: -90, y: 70, kind: "tree" },
+      { x: 90, y: 70, kind: "tree" },
+      { x: -40, y: 110, kind: "bench" },
+      { x: 40, y: 110, kind: "bench" },
+    ];
+    for (const d of deco) {
+      const p = worldToScreen(d.x, d.y);
+      const z = state.zoom * dpr;
+      if (d.kind === "tree") {
+        ctx.fillStyle = "rgba(46, 92, 72, 0.9)";
+        ctx.fillRect(p.x - 10 * z, p.y - 14 * z, 20 * z, 20 * z);
+        ctx.fillStyle = "rgba(26, 51, 40, 0.9)";
+        ctx.fillRect(p.x - 6 * z, p.y + 6 * z, 12 * z, 10 * z);
+        ctx.fillStyle = "rgba(90, 70, 52, 0.95)";
+        ctx.fillRect(p.x - 3 * z, p.y + 12 * z, 6 * z, 14 * z);
+      } else {
+        ctx.fillStyle = "rgba(120, 96, 70, 0.95)";
+        ctx.fillRect(p.x - 14 * z, p.y - 4 * z, 28 * z, 8 * z);
+        ctx.fillStyle = "rgba(70, 60, 54, 0.95)";
+        ctx.fillRect(p.x - 12 * z, p.y + 4 * z, 4 * z, 10 * z);
+        ctx.fillRect(p.x + 8 * z, p.y + 4 * z, 4 * z, 10 * z);
+      }
+    }
+
     // 摊位/告示牌
     for (const b of state.booths) {
       const p = worldToScreen(b.x, b.y);
@@ -312,6 +350,15 @@ function initWorld() {
         ctx.fillStyle = "rgba(245,245,245,0.95)";
         ctx.fillText(title, p.x - tw / 2, p.y - 20 * dpr);
       }
+    }
+
+    // 没有帖子时的提示
+    if (!state.booths.length) {
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(12 * dpr, canvas.height - 44 * dpr, canvas.width - 24 * dpr, 32 * dpr);
+      ctx.fillStyle = "rgba(245,245,245,0.95)";
+      ctx.font = `${12 * dpr}px ui-sans-serif`;
+      ctx.fillText("地图空空的：点「生成示例内容」或在下方发布一条作品", 22 * dpr, canvas.height - 24 * dpr);
     }
 
     requestAnimationFrame(draw);
@@ -381,6 +428,7 @@ function initWorld() {
 window.addEventListener("DOMContentLoaded", async () => {
   worldState = initWorld();
   document.getElementById("refreshBtn").onclick = refresh;
+  document.getElementById("demoBtn").onclick = demo;
   document.getElementById("postBtn").onclick = post;
   document.getElementById("moreBtn").onclick = () => loadFeed({ append: true });
 

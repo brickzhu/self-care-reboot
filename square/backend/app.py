@@ -154,6 +154,46 @@ def create_post():
     return jsonify({"ok": True, "item": post})
 
 
+@app.post("/api/v1/demo")
+def create_demo_posts():
+    """
+    生成一些示例帖子，方便第一次打开就有内容。
+    """
+    db = load_db()
+    uid = get_client_user_id()
+    now = now_ms()
+
+    samples = [
+        ("幼年自我 · 第 1 天", "我没有变厉害，我只是开始照顾自己了。", ["幼年自我", "开始"]),
+        ("幼年自我 · 第 3 天", "我学会把难受说出来，而不是硬撑。", ["情绪", "表达"]),
+        ("幼年自我 · 第 5 天", "今天只做了一点点，但这一点点很重要。", ["自律", "小步"]),
+        ("幼年自我 · 第 7 天", "我愿意对自己温柔一点。", ["温柔", "成长"]),
+        ("广场 · 小摊位", "把你的像素分镜 URL 粘贴到发布框里试试。", ["提示", "像素"]),
+        ("练习 · 边界感", "我可以拒绝，但我依然是个好人。", ["边界", "自信"]),
+        ("练习 · 微运动", "散步 10 分钟，世界没有变，但我轻了一点。", ["外形", "能量"]),
+        ("练习 · 小确幸", "今天的光落在桌角，我突然很想活得慢一点。", ["小确幸", "情绪"]),
+    ]
+
+    created = []
+    for i, (title, text, tags) in enumerate(samples):
+        post = {
+            "id": new_id("post"),
+            "type": "pixel_strip",
+            "title": title,
+            "text": text,
+            "tags": tags,
+            "renderSpec": {"demo": True},
+            "imageUrl": "",  # 先留空：避免外链图片不稳定
+            "author": {"userId": uid, "displayName": "广场小猫"},
+            "createdAtMs": now - i * 60000,
+        }
+        db["posts"].append(post)
+        created.append(post)
+
+    save_db(db)
+    return jsonify({"ok": True, "count": len(created), "items": created})
+
+
 @app.post("/api/v1/posts/<post_id>/like")
 def like_post(post_id: str):
     db = load_db()

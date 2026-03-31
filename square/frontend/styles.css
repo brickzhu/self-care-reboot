@@ -51,6 +51,7 @@ body {
 
 .world__top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .world__hint { color: var(--muted); font-size: 12px; }
+.world__actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .world__wrap {
   position: relative;
   margin-top: 10px;
