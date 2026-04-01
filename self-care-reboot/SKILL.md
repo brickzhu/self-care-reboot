@@ -15,6 +15,7 @@ tools:
   - scripts/story_generator.py
   - scripts/growth_report.py
   - scripts/pixel_renderer.py
+  - scripts/square_publish.py
 metadata:
   openclaw:
     requires:
@@ -253,18 +254,28 @@ triggers:
    > 最重要的不是数字，而是你选择开始养自己的那一刻。
 
 --- 
-## 六、社交与分享（轻量版，可选）
+## 六、社交与分享（广场 · 轻量版）
 ### 触发条件
-- `分享我的成长`
+- `分享我的成长` / `发到广场`
 - `生成对比图`
 
 ### 执行流程
-1. **生成分享卡片**
-   - 使用 `ipython`（可选）生成图像/可视化
-   - 文案建议：
-     > “重启人生第 45 天，我在不慌不忙地变好 ✨”
+1. **本地广场（square）**
+   - 启动后端：`square/backend/app.py`（默认 `http://127.0.0.1:19100`）
+   - 环境变量（可选）：`SQUARE_BASE_URL`、`SQUARE_USER_ID`、`SQUARE_DISPLAY_NAME`
 
-   - 可以直接保存分享，或复制文案～
+2. **成长报告 → 发帖**
+   - 先调用 `growth_report.py report`，建议 `with_image=true` 生成像素头像路径 `avatar_image_path`
+   - 再调用 `square_publish.py growth-report`，把上一步 JSON 作为 `report` 传入（Lobster 下用 `--args-json`）
+   - 帖子会出现在广场 feed，带图时可使用后端内联 `imageBase64` 落盘为 `/api/v1/files/...`（无需公网图床）
+
+3. **养成小人「性格」与后续半自动生态（设计位）**
+   - 初始化档案时可在 `persona` 中写入：`traits`（如温润、话少、好奇）、`voice`、`plaza_mode`（`manual` / `semi` / `auto`）
+   - 发帖时的 `renderSpec.persona` 会与属性快照一并保存，便于将来做「同一性格口径」的定时发帖、评论或对战匹配
+   - **自动发帖**仅建议在内网/演示环境使用，公网需频控、内容安全与鉴权
+
+4. **纯文本分享（备选）**
+   - 使用 `ipython`（可选）生成图像/可视化；文案示例：「重启人生第 45 天，我在不慌不忙地变好 ✨」
 
 --- 
 ## 使用示例

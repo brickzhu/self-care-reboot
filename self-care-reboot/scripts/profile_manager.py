@@ -133,7 +133,13 @@ def render_comparison(initial: dict[str, int], ideal_deltas: dict[str, int]) -> 
     return "、".join(parts) + "。"
 
 
-def init_profile(ideal: str, pain: str, stage: str, seed: int | None = None) -> dict[str, Any]:
+def init_profile(
+    ideal: str,
+    pain: str,
+    stage: str,
+    seed: int | None = None,
+    persona: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     rng = random.Random(seed)
     base = {a: rng.randint(40, 60) for a in ATTRS}
     ideal_deltas = compute_ideal_deltas(ideal)
@@ -167,7 +173,7 @@ def init_profile(ideal: str, pain: str, stage: str, seed: int | None = None) -> 
 
     comparison = render_comparison({a: base[a] for a in ATTRS}, ideal_deltas)
 
-    profile = {
+    profile: dict[str, Any] = {
         "type": "self-care-reboot.profile",
         "created_at": utc_iso(),
         "stage": stage or "current",
@@ -177,6 +183,17 @@ def init_profile(ideal: str, pain: str, stage: str, seed: int | None = None) -> 
         "focus_areas": focus_areas,
         "comparison_note": comparison,
     }
+    if persona and isinstance(persona, dict):
+        traits = persona.get("traits")
+        if not isinstance(traits, list):
+            traits = []
+        traits_out = [str(t)[:24] for t in traits][:12]
+        profile["persona"] = {
+            "traits": traits_out,
+            "voice": str(persona.get("voice", "gentle"))[:32],
+            # manual：仅用户触发发帖；semi：定时摘要+确认；auto：仅演示/内网（需频控与审核）
+            "plaza_mode": str(persona.get("plaza_mode", "manual"))[:16],
+        }
     return profile
 
 
@@ -213,7 +230,9 @@ def main() -> None:
             pain = args_json.get("pain", args.pain)
             stage = args_json.get("stage", args.stage)
             seed = args_json.get("seed", args.seed)
-            profile = init_profile(str(ideal or ""), str(pain or ""), str(stage or "current"), seed=seed)
+            raw_persona = args_json.get("persona")
+            persona = raw_persona if isinstance(raw_persona, dict) else None
+            profile = init_profile(str(ideal or ""), str(pain or ""), str(stage or "current"), seed=seed, persona=persona)
 
             if is_lobster_tool_mode():
                 print_json(

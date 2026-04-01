@@ -235,9 +235,12 @@ function initWorld() {
 
     create() {
       sceneRef = this;
-      this.cameras.main.setBackgroundColor("#1a1a2e");
-      this.cameras.main.setZoom(2);
-      this.cameras.main.roundPixels = true;
+      const cam = this.cameras.main;
+      cam.setBackgroundColor("#1a1a2e");
+      cam.setZoom(2);
+      cam.roundPixels = true;
+      // 世界原点 (0,0) 即喷泉中心，初始对齐视口正中（避免进场偏在一角要手动拖）
+      cam.centerOn(0, 0);
 
       // textures (procedural pixel)
       makeTexture(this, "tileA", 16, 16, (g) => {
@@ -386,9 +389,9 @@ function initWorld() {
         cam.scrollY -= (p.position.y - p.prevPosition.y) / cam.zoom;
       });
 
-      // hint
+      // hint（屏幕固定坐标，随画布高度贴底，避免固定 480px 在小屏裁切）
       this.tipText = this.add
-        .text(12, 480, "地图空空的：点「生成示例内容」或在下方发布一条作品", {
+        .text(12, 12, "地图空空的：点「生成示例内容」或在下方发布一条作品", {
           fontFamily: "ui-sans-serif",
           fontSize: "12px",
           color: "#f5f5f5",
@@ -397,6 +400,14 @@ function initWorld() {
         })
         .setScrollFactor(0)
         .setDepth(1000);
+
+      const layoutTip = () => {
+        const h = this.cameras.main.height;
+        const pad = 12;
+        this.tipText.setY(Math.max(pad, h - pad - this.tipText.height));
+      };
+      layoutTip();
+      this.scale.on("resize", layoutTip);
 
       this.refreshBooths(state.posts);
     }

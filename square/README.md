@@ -34,7 +34,8 @@ python app.py
 
 - `GET /health`
 - `GET /api/v1/feed?limit=30&cursor=<createdAtMs>`
-- `POST /api/v1/posts`
+- `POST /api/v1/posts`（可选字段 `imageBase64` + `imageMime`：服务端保存为 `/api/v1/files/img_*.png`）
+- `GET /api/v1/files/<name>`（上传生成的静态图）
 - `POST /api/v1/posts/{postId}/like`
 - `GET /api/v1/posts/{postId}/comments`
 - `POST /api/v1/posts/{postId}/comments`

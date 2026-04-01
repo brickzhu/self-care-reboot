@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import json
 import os
+import re
 import secrets
 import time
 from dataclasses import dataclass
@@ -18,6 +20,11 @@ SQUARE_ROOT = APP_ROOT.parent
 DATA_DIR = SQUARE_ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "square.json"
+UPLOAD_DIR = DATA_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+MAX_INLINE_IMAGE_BYTES = 2 * 1024 * 1024
+_UPLOAD_NAME_RE = re.compile(r"^img_[0-9a-f]{16}\.(png|jpg|jpeg|gif|webp)$", re.IGNORECASE)
 
 
 def now_ms() -> int:
@@ -119,6 +126,45 @@ def feed():
     return jsonify({"items": out, "nextCursor": next_cursor})
 
 
+def _save_inline_image(body: dict[str, Any]) -> str:
+    """Decode imageBase64 into uploads/ and return relative URL, or ""."""
+    raw_b64 = body.get("imageBase64")
+    if not isinstance(raw_b64, str) or not raw_b64.strip():
+        return ""
+    try:
+        raw = base64.b64decode(raw_b64.strip(), validate=True)
+    except Exception:
+        try:
+            raw = base64.b64decode(raw_b64.strip())
+        except Exception:
+            return ""
+    if len(raw) > MAX_INLINE_IMAGE_BYTES:
+        return ""
+    mime = str(body.get("imageMime", "image/png")).lower()
+    if "jpeg" in mime or "jpg" in mime:
+        ext = ".jpg"
+    elif "gif" in mime:
+        ext = ".gif"
+    elif "webp" in mime:
+        ext = ".webp"
+    else:
+        ext = ".png"
+    name = new_id("img") + ext
+    path = UPLOAD_DIR / name
+    path.write_bytes(raw)
+    return f"/api/v1/files/{name}"
+
+
+@app.get("/api/v1/files/<name>")
+def serve_upload(name: str):
+    if not _UPLOAD_NAME_RE.match(name):
+        return jsonify({"ok": False}), 404
+    path = UPLOAD_DIR / name
+    if not path.is_file():
+        return jsonify({"ok": False}), 404
+    return send_from_directory(str(UPLOAD_DIR), name)
+
+
 @app.post("/api/v1/posts")
 def create_post():
     db = load_db()
@@ -136,6 +182,8 @@ def create_post():
     # renderSpec 用于将来“可再现渲染”（像素分镜参数），也可存 imageUrl
     render_spec = body.get("renderSpec")
     image_url = sanitize_text(body.get("imageUrl", ""), max_len=500)
+    if not image_url:
+        image_url = _save_inline_image(body)
 
     uid = get_client_user_id()
     post = {

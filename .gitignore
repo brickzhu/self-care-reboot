@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Square runtime data (local dev)
+square/data/
+
