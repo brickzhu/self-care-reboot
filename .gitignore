@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# 本地交接笔记（不提交远程，随协作进度更新）
+SQUARE_HANDOFF.md
+
