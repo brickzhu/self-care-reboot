@@ -13,9 +13,12 @@ self-care-reboot/
     ├── daily_tasks.py
     ├── story_generator.py
     ├── growth_report.py
+    ├── square_publish.py
     ├── lobster_protocol.py
     └── pixel_renderer.py
 ```
+
+**广场**：独立仓库 **`square`**，与本技能分仓；发帖前配置 `SQUARE_BASE_URL` 指向广场服务。
 
 ## 部署
 

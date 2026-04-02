@@ -1,6 +1,7 @@
 # self-care-reboot（重启人生·养自己计划）
 
-一个“无压力、高自由、纯治愈”的轻量级养成式 Agent 技能。
+本仓库为 **Agent 技能**（`self-care-reboot/`），与 **广场服务** 分仓维护。  
+广场代码在独立仓库 **`square`**（你自建的 GitHub 仓库）；通过环境变量 `SQUARE_BASE_URL` 连接，详见 `self-care-reboot/SKILL.md` 第六节。
 
 ## 目录结构
 
@@ -12,52 +13,21 @@ self-care-reboot/
     ├── profile_manager.py
     ├── daily_tasks.py
     ├── story_generator.py
-    └── growth_report.py
+    ├── growth_report.py
+    ├── square_publish.py   # 发帖到广场 API（需配置 SQUARE_BASE_URL）
+    └── …
 ```
 
 ## 部署
 
-把整个 `self-care-reboot/` 文件夹拷贝到你的“龙虾/OpenClaw”技能目录下（具体路径以你的平台为准），确保运行时能找到：
-- `SKILL.md`
-- `scripts/*.py`
+把整个 `self-care-reboot/` 拷贝到 OpenClaw（或平台）技能目录；发帖前在运行环境中配置：
 
-## 脚本（CLI）用法（便于你调试）
+- `SQUARE_BASE_URL`：指向你已部署的 **square** 仓库对应服务地址。
 
-这些脚本默认走 JSON 输入/输出，方便你在平台对接时把结果写入 `memory_space`：
+## 脚本调试
 
-1. 初始化画像
-```bash
-python scripts/profile_manager.py init --ideal "自信大方,自律高效" --pain "拖延摆烂" --stage "current"
-```
+见 `self-care-reboot/README.md`。
 
-2. 生成今日任务
-```bash
-python scripts/daily_tasks.py today --seed 123
-```
+## Lobster（工具模式）
 
-3. 生成事件选择
-```bash
-python scripts/story_generator.py event
-```
-
-4. 生成成长报告
-```bash
-python scripts/growth_report.py report --attributes '{"confidence":60,"discipline":55,"emotion":72,"talent":48,"appearance":50,"social":40}' --days 15
-```
-
-如果你把“龙虾”的脚本入参/出参格式发我，我也可以把上述 CLI 调整成完全匹配你平台的调用方式。
-
-## Lobster（工具模式）协议对齐
-
-当 `LOBSTER_MODE=tool` 时，脚本会输出 Lobster `protocolVersion: 1` 的 JSON 信封格式：
-- `ok/status/output/requiresApproval` 或 `ok=false/error.message`
-
-并支持 `--args-json` 作为统一入参（可以放在子命令前或后）：
-
-```text
-python scripts/profile_manager.py init --args-json "{\"ideal\":\"自信大方\",\"pain\":\"拖延\",\"stage\":\"current\",\"seed\":1}"
-python scripts/daily_tasks.py today --args-json "{\"seed\":2,\"count\":4}"
-python scripts/story_generator.py event --args-json "{\"seed\":3}"
-python scripts/story_generator.py feedback --args-json "{\"event_id\":\"scene_030\",\"choice\":\"A\"}"
-python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15}"
-```
+同 `self-care-reboot/README.md` 中的 `--args-json` 与 `LOBSTER_MODE=tool` 说明。
