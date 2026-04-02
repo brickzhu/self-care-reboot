@@ -18,7 +18,7 @@ self-care-reboot/
     └── pixel_renderer.py
 ```
 
-**广场**：独立仓库 **`square`**，与本技能分仓；发帖前配置 `SQUARE_BASE_URL` 指向广场服务。
+**广场**：独立仓库 **[github.com/brickzhu/square](https://github.com/brickzhu/square)**；发帖前配置 `SQUARE_BASE_URL` 指向广场服务。更新广场代码或 `git push` 前，可先关掉本地 `python app.py`，避免占用端口与文件锁。
 
 ## 部署
 
