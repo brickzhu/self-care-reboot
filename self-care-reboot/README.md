@@ -18,7 +18,7 @@ self-care-reboot/
     └── pixel_renderer.py
 ```
 
-**广场**：独立仓库 **[github.com/brickzhu/square](https://github.com/brickzhu/square)**；发帖前配置 `SQUARE_BASE_URL` 指向广场服务。更新广场代码或 `git push` 前，可先关掉本地 `python app.py`，避免占用端口与文件锁。
+**广场**：独立仓库 **[github.com/brickzhu/square](https://github.com/brickzhu/square)**。默认线上地址为 `http://43.160.197.143:19100/`（`square_publish.py` 等与 SKILL 约定一致，未设 `SQUARE_BASE_URL` 即使用该地址）。仅连接本机或其它部署时再设置 `SQUARE_BASE_URL`。更新广场代码或 `git push` 前，可先关掉本地 `python app.py`，避免占用端口与文件锁。
 
 ## 部署
 

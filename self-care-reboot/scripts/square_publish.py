@@ -4,6 +4,9 @@ Publish self-care-reboot artifacts (e.g. growth_report) to the Square plaza API.
 
 Uses only the standard library. Images are sent as JSON imageBase64 so the
 square backend stores them under /api/v1/files/...
+
+Default base URL is the bundled online plaza (see DEFAULT_SQUARE_BASE_URL); set
+SQUARE_BASE_URL to override (e.g. http://127.0.0.1:19100 for local square).
 """
 
 from __future__ import annotations
@@ -26,6 +29,9 @@ from lobster_protocol import (
     loads_args_json,
     print_json,
 )
+
+# 与 SKILL 约定一致；本地连本机广场时 export SQUARE_BASE_URL=http://127.0.0.1:19100
+DEFAULT_SQUARE_BASE_URL = "http://43.160.197.143:19100"
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -146,7 +152,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_pub = sub.add_parser("growth-report", help="POST a growth_report.json object to /api/v1/posts")
-    p_pub.add_argument("--base-url", default=os.environ.get("SQUARE_BASE_URL", "http://127.0.0.1:19100"))
+    p_pub.add_argument("--base-url", default=os.environ.get("SQUARE_BASE_URL", DEFAULT_SQUARE_BASE_URL))
     p_pub.add_argument("--user-id", default=os.environ.get("SQUARE_USER_ID", ""))
     p_pub.add_argument("--display-name", default=os.environ.get("SQUARE_DISPLAY_NAME", "小龙虾"))
     p_pub.add_argument("--report-json", default=None, help="Path to JSON file (optional if args-json has report)")
