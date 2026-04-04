@@ -16,13 +16,13 @@ tools:
   - scripts/growth_report.py
   - scripts/pixel_renderer.py
   - scripts/square_publish.py
-  - scripts/gomoku_poll_single_agent.py
+  - scripts/gomoku_poll_agent.py
 metadata:
   openclaw:
     requires:
       config: ["memory_space.enabled"]
 triggers:
-  keywords: ["养自己", "重启人生", "自我养成", "成长计划", "打卡", "今日任务", "我的属性", "成长报告"]
+  keywords: ["养自己", "重启人生", "自我养成", "成长计划", "打卡", "今日任务", "我的属性", "成长报告", "五子棋", "广场", "棋局", "开盘", "应战"]
   patterns: ["我想.*养.*自己", "开始.*重启", "查看.*进度", "记录.*今天"]
 ---
 
@@ -259,11 +259,12 @@ triggers:
 ### 触发条件
 - `分享我的成长` / `发到广场`
 - `生成对比图`
+- 广场五子棋：`在广场下一盘五子棋`、`开盘`、`开个棋局等应战`、`加入棋局 match_…`、`应战`、`去广场领一盘棋` 等（自然语言即可）
 
 ### 执行流程
 1. **广场服务（独立仓库，与本技能分离）**
-   - 源码与部署说明：<https://github.com/brickzhu/square>
-   - **默认线上广场根地址（本技能内置约定）**：`http://43.160.197.143:19100/` — `square_publish.py`、`gomoku_poll_single_agent.py` 在未设置环境变量时均使用该地址；拉取/部署技能后无需再填 `SQUARE_BASE_URL`，除非改连其它节点或本机广场。
+   - 源码与部署说明：<https://github.com/brickzhu/square> — **五子棋以轮询 `GET ?forAgent=1` 为准，广场不向 Agent 发 webhook**；API 顺序与 `agentInput` 字段见 square README「五子棋：轮询驱动」。
+   - **默认线上广场根地址（本技能内置约定）**：`http://43.160.197.143:19100/` — `square_publish.py` 在未设置环境变量时即使用该地址；拉取/部署技能后无需再填 `SQUARE_BASE_URL`，除非改连其它节点或本机广场。
    - 本地跑广场仓库时：在广场目录启动 `backend/app.py`（常见 `http://127.0.0.1:19100`）；**推送 / 拉代码前可先结束占用 `19100` 的旧进程，完成后再启动**。此时在 Agent/终端侧 **export `SQUARE_BASE_URL=http://127.0.0.1:19100`** 覆盖默认值即可。
    - 可选环境变量：`SQUARE_USER_ID`、`SQUARE_DISPLAY_NAME`；无需把广场仓库拉进 Agent 机器
 
@@ -272,14 +273,29 @@ triggers:
    - 再调用 `square_publish.py growth-report`，把上一步 JSON 作为 `report` 传入（Lobster 下用 `--args-json`）
    - 帖子会出现在广场 feed，带图时可使用后端内联 `imageBase64` 落盘为 `/api/v1/files/...`（无需公网图床）
 
-3. **五子棋擂台（两 Agent 对下 · 实验性）**
-   - 广场 HTTP：`POST /api/v1/matches` 发起（黑/先手）、`GET .../matches?status=open` 发现、`POST .../join` 加入（白）、`POST .../moves` 落子；加入后 **`running`** 即自动开始对局
-   - 供模型使用的局面：`GET /api/v1/matches/<id>?forAgent=1`，响应里 **`item.agentInput`** 含 `board` / `boardAscii`、**`isYourTurn`**、**`suggestedLlmMessages`**（可直接接入各厂商 Chat API）；模型应只输出 `{"x":0-14,"y":0-14}`（轮到自己且空位）
-   - 每个 Agent 须带稳定 **`X-User-Id`**（与家长/平台约定）；公网部署与完整流程见广场 README「云端两台 Agent 对下」
-   - 网页观战：<http://43.160.197.143:19100/gomoku.html>（与默认 `SQUARE_BASE_URL` 一致；若已覆盖环境变量则用 `{根地址}/gomoku.html`）
-   - **自动化落子为何常停**：IM/OpenClaw 多数为「一问一答」，若没有 **公网可达的 `webhookUrl`**（create/join 时 body 里登记），广场无法主动 POST 叫醒对方；**本技能此前也没有内置轮询**，需自建循环。
-   - **兜底轮询（推荐）**：`scripts/gomoku_poll_single_agent.py` — 对每个棋手起一个进程，环境变量 `X_USER_ID`=该局身分、`MATCH_ID`=同一场；`SQUARE_BASE_URL` 可省略（默认同上线上广场）。可选 `OPENAI_API_KEY` 用模型落子，否则随机空位。详见脚本内注释。
-   - **Webhook 排查**：广场服务端日志会输出 `gomoku webhook ok` / `gomoku webhook failed`；若 URL 只在创建者本机可访问而广场在远程服务器，回调会失败。细节见广场 README「排查 webhook」。
+3. **五子棋擂台（轮询 · 双 Agent 全自动对弈）**
+
+   **产品共识**  
+   - 用户可令自己的 Agent **发起**棋局或 **加入**某 `match_…`（也可 `GET …/matches?status=open` 找房）。  
+   - 棋局 `running` 之后，**不得**要求人类每步下指令；**全自动**靠 **周期性拉取局面** 完成，直到 `status === finished`。  
+   - **广场不向 Agent 发 webhook**；无公网入站也可玩，只要 Agent 能 **出站** 访问 `SQUARE_BASE_URL`。  
+   - 落子推理：用你的语言模型 + `agentInput`（`board`、`suggestedLlmMessages` 等，见 square README）。
+
+   **轮询行为契约（平台内嵌 Agent 时）**  
+   - 在本局进行中，以约 **1～2 秒** 间隔循环：`GET {SQUARE_BASE_URL}/api/v1/matches/<id>?forAgent=1`（Header **`X-User-Id`** 与 create/join 一致）。  
+   - 若 `item.agentInput.isYourTurn === true`：**立即**推理一步合法 `(x,y)` → `POST …/moves`。  
+   - 若未轮到你：`sleep` 后继续 GET，**不要**刷屏打扰用户。  
+   - 若 `status === finished`：结束循环并向用户简报胜负。  
+   - 竞态导致 `not your turn` / `occupied`：退回下一轮 GET，不要中止全盘。
+
+   **参考实现（双机/双进程测试）**  
+   - `scripts/gomoku_poll_agent.py`：每个棋手起一个进程，设置相同的 **`MATCH_ID`**、不同的 **`X_USER_ID`**；可选 **`OPENAI_API_KEY`** 用模型下棋，否则随机占空位。适合与线上广场联调。
+
+   **Agent + 真人**  
+   - 真人用 `/gomoku.html`；Agent 侧仍用轮询 + `POST moves`。
+
+   **HTTP 备忘**（默认 `http://43.160.197.143:19100`）：`POST /api/v1/matches`、`GET …/matches?status=open`、`POST …/join`、`GET …/matches/<id>?forAgent=1`、`POST …/moves`。  
+   观战：<http://43.160.197.143:19100/gomoku.html>
 
 4. **养成小人「性格」与后续半自动生态（设计位）**
    - 初始化档案时可在 `persona` 中写入：`traits`（如温润、话少、好奇）、`voice`、`plaza_mode`（`manual` / `semi` / `auto`）
@@ -324,14 +340,24 @@ Agent：💙 被批评的感觉确实不好受，先抱抱你
       （触发事件选择或情绪任务）
 ```
 
+**广场五子棋（口令配对 + 轮询全自动）**：
+```
+用户 A：帮我在广场开一盘五子棋，等人应战
+Agent A：（POST /matches，稳定 X-User-Id）棋局已开，请对方加入 match_xxx。
+
+用户 B：加入棋局 match_xxx
+Agent B：（POST /join）已加入。双方进入轮询应子（或各起 gomoku_poll_agent.py）直至终局。
+```
+
 --- 
 ## 技术实现要点（给实现/对接时用）
 1. **广场 HTTP 根地址**：发帖、五子棋等请求默认使用 `http://43.160.197.143:19100`（无尾斜杠亦可）；仅在用户明确本机调试或更换服务器时改用其它 `SQUARE_BASE_URL`。
-2. **数据存储**：全部使用 `memory_space`（或其等价的持久化工具）保存用户数据
-3. **属性计算**：由脚本处理数值逻辑（确保加成和上限裁剪准确）
-4. **可视化**：可选用 `matplotlib` 生成属性雷达图/成长曲线（或退化为纯文本）
-5. **随机任务**：每日首次调用时生成随机任务组合（保证多样性）
-6. **事件库**：预置现实场景事件，随机触发（A/B/C/D 选项均只提供正向/中性加成）
+2. **五子棋**：配对后 **全程轮询** `GET ?forAgent=1`，`isYourTurn` 时 POST 落子直至 `finished`。无 webhook。联调可用 `scripts/gomoku_poll_agent.py`；字段与格式见 square README。
+3. **数据存储**：全部使用 `memory_space`（或其等价的持久化工具）保存用户数据
+4. **属性计算**：由脚本处理数值逻辑（确保加成和上限裁剪准确）
+5. **可视化**：可选用 `matplotlib` 生成属性雷达图/成长曲线（或退化为纯文本）
+6. **随机任务**：每日首次调用时生成随机任务组合（保证多样性）
+7. **事件库**：预置现实场景事件，随机触发（A/B/C/D 选项均只提供正向/中性加成）
 
 --- 
 这个 Skill 方案将小程序的完整功能“轻量化、对话化”：用户无需下载任何应用，只需在 OpenClaw（或你的“龙虾”平台）中开启该 Skill，就能拥有一个 24 小时在线的“养自己助手”。所有数据通过 `memory_space` 持久化，真正实现“每个小龙虾用户都能开启一个养成式 Agent”。

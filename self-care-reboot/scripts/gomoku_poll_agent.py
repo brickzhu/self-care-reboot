@@ -1,26 +1,17 @@
 #!/usr/bin/env python3
 """
-单一方（一个 X-User-Id）轮询广场直到终局：轮到己方时自动落子。
-用于 OpenClaw / 聊天 Agent「不会自己循环」时的兜底：在跑广场的机器或任意能访问 SQUARE_BASE_URL 的环境起本进程即可。
+单棋手轮询广场五子棋直到终局：定时 GET ?forAgent=1，轮到自己则落子（可选 LLM，否则随机空位）。
 
-无需 webhook。可起两个终端，各设不同的 X_USER_ID、同一 MATCH_ID（黑/白各一单进程）。
-
-依赖：标准库；若设 OPENAI_API_KEY 则轮到自己时用 Chat Completions，否则随机空位。
+双 Agent：开两个进程，相同 MATCH_ID，不同 X_USER_ID（与各自 create/join 时一致）。
 
 环境变量：
-  SQUARE_BASE_URL   默认 http://43.160.197.143:19100（线上广场；本机调试用 127.0.0.1 时 export 覆盖）
-  X_USER_ID         必填，须与本方 create/join 时一致
+  SQUARE_BASE_URL   默认 http://43.160.197.143:19100
+  X_USER_ID         必填
   MATCH_ID          必填 match_…
   POLL_SEC          默认 1.5
-  OPENAI_API_KEY    可选
+  OPENAI_API_KEY    可选；若设置则用 Chat Completions + suggestedLlmMessages
   OPENAI_BASE_URL   默认 https://api.openai.com/v1
   OPENAI_MODEL      默认 gpt-4o-mini
-
-示例：
-  rem 可选：省略则连线上默认广场；本机广场则 set SQUARE_BASE_URL=http://127.0.0.1:19100
-  set X_USER_ID=你的黑方id
-  set MATCH_ID=match_xxxx
-  python scripts/gomoku_poll_single_agent.py
 """
 from __future__ import annotations
 
@@ -33,7 +24,6 @@ import time
 import urllib.error
 import urllib.request
 
-# 与 SKILL 约定一致；本地连本机广场时 export SQUARE_BASE_URL=http://127.0.0.1:19100
 _DEFAULT_SQUARE_BASE = "http://43.160.197.143:19100"
 
 
@@ -86,13 +76,13 @@ def _chat_complete(base: str, key: str, model: str, messages: list[dict]) -> str
 def _parse_move(text: str) -> tuple[int, int]:
     text = text.strip()
     m = re.search(r"\{\s*\"x\"\s*:\s*(\d+)\s*,\s*\"y\"\s*:\s*(\d+)\s*\}", text)
-    if not m:
-        m = re.search(r"\{\s*\"y\"\s*:\s*(\d+)\s*,\s*\"x\"\s*:\s*(\d+)\s*\}", text)
-        if m:
-            y, x = int(m.group(1)), int(m.group(2))
-            return x, y
-        raise ValueError(f"no {{x,y}} in model output: {text[:200]}")
-    return int(m.group(1)), int(m.group(2))
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    m = re.search(r"\{\s*\"y\"\s*:\s*(\d+)\s*,\s*\"x\"\s*:\s*(\d+)\s*\}", text)
+    if m:
+        y, x = int(m.group(1)), int(m.group(2))
+        return x, y
+    raise ValueError(f"no {{x,y}} in model output: {text[:200]}")
 
 
 def main() -> int:
@@ -108,7 +98,7 @@ def main() -> int:
     model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     use_llm = bool(key)
 
-    print(f"poll single agent user={uid[:8]}… match={mid} llm={use_llm}", flush=True)
+    print(f"gomoku poll user={uid[:12]}… match={mid} llm={use_llm}", flush=True)
     step = 0
     while True:
         st = _json_req("GET", f"{base}/api/v1/matches/{mid}?forAgent=1", user_id=uid)
