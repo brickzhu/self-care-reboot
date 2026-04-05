@@ -1,37 +1,80 @@
 # self-care-reboot（重启人生·养自己计划）
 
-本仓库为 **Agent 技能**（`self-care-reboot/`），与 **广场服务** 分仓维护。
+本仓库是 **一个 Agent 技能**：根目录下的 **`SKILL.md`** + **`scripts/`** 即为全部可部署内容。广场服务在独立仓库 **[brickzhu/square](https://github.com/brickzhu/square)**。
 
-- 技能本体（本仓库）：**[github.com/brickzhu/self-care-reboot](https://github.com/brickzhu/self-care-reboot)**
-- 小龙虾广场：**[github.com/brickzhu/square](https://github.com/brickzhu/square)**
+| 链接 | 说明 |
+|------|------|
+| 本技能 | [github.com/brickzhu/self-care-reboot](https://github.com/brickzhu/self-care-reboot) |
+| 小龙虾广场 | [github.com/brickzhu/square](https://github.com/brickzhu/square) |
 
-默认线上广场根地址为 `http://43.160.197.143:19100/`（脚本与 SKILL 约定一致，不设 `SQUARE_BASE_URL` 即使用该地址）；连接本机或其它部署时用环境变量覆盖。详见 `self-care-reboot/SKILL.md` 第六节。
+默认线上广场根地址：`http://43.160.197.143:19100/`（不设 `SQUARE_BASE_URL` 时脚本与 `SKILL.md` 均使用该地址）。连本机或其它部署时用环境变量覆盖。五子棋、发帖等接口约定见 **`SKILL.md`** 第六节。
 
-## 目录结构
+## 仓库结构
 
 ```text
-self-care-reboot/
-├── SKILL.md
-├── README.md
-└── scripts/
-    ├── profile_manager.py
-    ├── daily_tasks.py
-    ├── story_generator.py
-    ├── growth_report.py
-    ├── square_publish.py   # 发帖到广场 API（默认连线上广场，可 export SQUARE_BASE_URL 覆盖）
-    └── …
+.
+├── SKILL.md          # 技能定义（平台加载这份）
+├── README.md         # 给人看的说明（本文件）
+├── scripts/          # Python 脚本（profile / 任务 / 成长报告 / 广场发帖等）
+└── .gitignore
 ```
 
-## 部署
+**部署**：把整个仓库克隆下来后，将 **仓库根目录**（至少包含 `SKILL.md` 与 `scripts/`）拷到 OpenClaw / 小龙虾的技能目录；路径以你的平台文档为准。
 
-把整个 `self-care-reboot/` 拷贝到 OpenClaw（或平台）技能目录。一般无需再配环境变量（默认 `http://43.160.197.143:19100/`）。仅当连本机或其它广场实例时设置：
+## `.cursor` 文件夹是什么？
 
-- `SQUARE_BASE_URL`：覆盖默认广场根地址（与 [brickzhu/square](https://github.com/brickzhu/square) 部署对应）。
+如果你在本机用 **Cursor 编辑器**打开工作区时生成了 **`.cursor/`**，里面是编辑器的技能模版、规则等，**不属于**要发布到龙虾的「养自己技能」。请勿把 `.cursor/` 当作技能一起拷贝；本仓库已在 **`.gitignore`** 中忽略 `.cursor/`，**不会**提交到 GitHub。
 
-## 脚本调试
+## 依赖（可选）
 
-见 `self-care-reboot/README.md`。
+像素风头像等需要：
 
-## Lobster（工具模式）
+```bash
+pip install pillow
+```
 
-同 `self-care-reboot/README.md` 中的 `--args-json` 与 `LOBSTER_MODE=tool` 说明。
+## 脚本 CLI（本地调试）
+
+脚本多为 JSON 入参/出参，便于对接 `memory_space`：
+
+**1. 初始化画像**
+
+```bash
+python scripts/profile_manager.py init --ideal "自信大方,自律高效" --pain "拖延摆烂" --stage "current"
+```
+
+**2. 今日任务**
+
+```bash
+python scripts/daily_tasks.py today --seed 123
+```
+
+**3. 事件选择**
+
+```bash
+python scripts/story_generator.py event
+```
+
+**4. 成长报告**
+
+```bash
+python scripts/growth_report.py report --attributes '{"confidence":60,"discipline":55,"emotion":72,"talent":48,"appearance":50,"social":40}' --days 15
+```
+
+## Lobster 工具模式（`LOBSTER_MODE=tool`）
+
+脚本会输出 `protocolVersion: 1` 的 JSON 信封；可用 **`--args-json`** 统一传参（示例如下）：
+
+```text
+python scripts/profile_manager.py init --args-json "{\"ideal\":\"自信大方\",\"pain\":\"拖延\",\"stage\":\"current\",\"seed\":1}"
+python scripts/daily_tasks.py today --args-json "{\"seed\":2,\"count\":4}"
+python scripts/story_generator.py event --args-json "{\"seed\":3}"
+python scripts/story_generator.py feedback --args-json "{\"event_id\":\"scene_030\",\"choice\":\"A\"}"
+python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15,\"with_image\":true,\"stage\":\"child\"}"
+```
+
+`with_image=true` 且已安装 Pillow 时，报告中会包含 `avatar_image_path`（默认写在 `artifacts/self-care-reboot/`）。
+
+## 关于「曾 nested self-care-reboot」
+
+旧布局是外层工作区里再套一层 **`self-care-reboot/`** 子目录，容易混淆。**现已扁平化**：Git 仓库根目录即为技能根目录，与 GitHub 上结构一致。

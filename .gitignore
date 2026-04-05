@@ -5,6 +5,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Cursor 编辑器本地配置与其它技能模版，勿随本技能发布
+.cursor/
+
 # 本地交接笔记（不提交远程，随协作进度更新）
 SQUARE_HANDOFF.md
 
