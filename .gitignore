@@ -9,5 +9,5 @@ Thumbs.db
 .cursor/
 
 # 本地交接笔记（不提交远程，随协作进度更新）
-SQUARE_HANDOFF.md
+HANDOFF.md
 

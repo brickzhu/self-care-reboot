@@ -67,12 +67,12 @@ def _attr_color_bar(val: int) -> tuple[str, str]:
     return "#ffe27a", "#3b2f4a"
 
 
-def render_avatar(attributes: Dict[str, int], stage: str, output_path: str) -> str:
+def render_avatar(attributes: Dict[str, int], life_phase: str, output_path: str) -> str:
     """
     生成单张像素角色卡。
 
     attributes: 六维属性 dict
-    stage: 阶段描述（如 "child" / "teen" / "adult"）
+    life_phase: 人生阶段描述（如 "child" / "teen" / "adult"）；勿与广场帖子 `forum` 分区混淆
     output_path: 输出 PNG 路径
     """
     size = STYLE.size
@@ -100,10 +100,10 @@ def render_avatar(attributes: Dict[str, int], stage: str, output_path: str) -> s
     unit = scale * 3  # 小人部件的基本单位
 
     # 年龄阶段影响身高
-    stage_norm = (stage or "").lower()
-    if "child" in stage_norm or "幼" in stage_norm:
+    lp_norm = (life_phase or "").lower()
+    if "child" in lp_norm or "幼" in lp_norm:
         body_units = 4
-    elif "teen" in stage_norm or "少" in stage_norm:
+    elif "teen" in lp_norm or "少" in lp_norm:
         body_units = 5
     else:
         body_units = 6
@@ -206,7 +206,7 @@ def render_avatar(attributes: Dict[str, int], stage: str, output_path: str) -> s
     bar_h = unit * 2
     draw.rectangle([(0, h - bar_h), (w, h)], fill="#111218")
     font = _safe_font(size=int(scale * 2.2))
-    stage_text = "幼年自我" if "child" in stage_norm or "幼" in stage_norm else "未来的我"
+    phase_caption = "幼年自我" if "child" in lp_norm or "幼" in lp_norm else "未来的我"
     key_attr = max(
         ["confidence", "discipline", "emotion", "talent", "appearance", "social"],
         key=lambda k: int(attributes.get(k, 0)),
@@ -220,7 +220,7 @@ def render_avatar(attributes: Dict[str, int], stage: str, output_path: str) -> s
         "appearance": "外形",
         "social": "社交",
     }
-    text = f"{stage_text} · {key_map.get(key_attr,'属性')} {key_val}"
+    text = f"{phase_caption} · {key_map.get(key_attr,'属性')} {key_val}"
     draw.text((scale * 2, h - bar_h + scale), text, fill="#f5f5f5", font=font)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -230,7 +230,7 @@ def render_avatar(attributes: Dict[str, int], stage: str, output_path: str) -> s
 
 def render_three_panel(
     *,
-    stage: str,
+    life_phase: str,
     action_label: str,
     emotion_label: str,
     line1: str,
@@ -315,7 +315,7 @@ def render_three_panel(
 
     # 顶部标签：阶段 + 情绪 + 行动
     title_font = _safe_font(int(scale * 2.8))
-    title = f"{stage} · {emotion_label} · {action_label}"
+    title = f"{life_phase} · {emotion_label} · {action_label}"
     bbox = title_font.getbbox(title)
     tw = bbox[2] - bbox[0]
     draw.text(((w - tw) // 2, scale), title, fill="#f5f5f5", font=title_font)
@@ -387,11 +387,11 @@ if __name__ == "__main__":
     out_dir = ROOT / "debug"
     out_dir.mkdir(parents=True, exist_ok=True)
     avatar_path = out_dir / "avatar.png"
-    render_avatar(attrs, stage="child", output_path=str(avatar_path))
+    render_avatar(attrs, life_phase="child", output_path=str(avatar_path))
 
     panel_path = out_dir / "three_panel.png"
     render_three_panel(
-        stage="幼年自我",
+        life_phase="幼年自我",
         action_label="伸展 3 分钟",
         emotion_label="稍微轻松了一点",
         line1="今天的你，有点累。",

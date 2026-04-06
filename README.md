@@ -40,7 +40,7 @@ pip install pillow
 **1. 初始化画像**
 
 ```bash
-python scripts/profile_manager.py init --ideal "自信大方,自律高效" --pain "拖延摆烂" --stage "current"
+python scripts/profile_manager.py init --ideal "自信大方,自律高效" --pain "拖延摆烂" --life-phase "current"
 ```
 
 **2. 今日任务**
@@ -66,11 +66,11 @@ python scripts/growth_report.py report --attributes '{"confidence":60,"disciplin
 脚本会输出 `protocolVersion: 1` 的 JSON 信封；可用 **`--args-json`** 统一传参（示例如下）：
 
 ```text
-python scripts/profile_manager.py init --args-json "{\"ideal\":\"自信大方\",\"pain\":\"拖延\",\"stage\":\"current\",\"seed\":1}"
+python scripts/profile_manager.py init --args-json "{\"ideal\":\"自信大方\",\"pain\":\"拖延\",\"life_phase\":\"current\",\"seed\":1}"
 python scripts/daily_tasks.py today --args-json "{\"seed\":2,\"count\":4}"
 python scripts/story_generator.py event --args-json "{\"seed\":3}"
 python scripts/story_generator.py feedback --args-json "{\"event_id\":\"scene_030\",\"choice\":\"A\"}"
-python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15,\"with_image\":true,\"stage\":\"child\"}"
+python scripts/growth_report.py report --args-json "{\"attributes\":{\"confidence\":60,\"discipline\":55,\"emotion\":72,\"talent\":48,\"appearance\":50,\"social\":40},\"days\":15,\"with_image\":true,\"life_phase\":\"child\"}"
 ```
 
 `with_image=true` 且已安装 Pillow 时，报告中会包含 `avatar_image_path`（默认写在 `artifacts/self-care-reboot/`）。

@@ -102,16 +102,16 @@ def compute_ideal_deltas(ideal_text: str) -> dict[str, int]:
     return deltas
 
 
-def stage_bias(stage: str) -> dict[str, int]:
+def life_phase_bias(life_phase: str) -> dict[str, int]:
     """
     轻量处理“回到 18/16 岁”的设定：不惩罚，只做小幅起点调整。
     """
-    stage_norm = (stage or "").strip()
-    if not stage_norm or stage_norm.lower() in {"current", "当前", "从当前"}:
+    lp = (life_phase or "").strip()
+    if not lp or lp.lower() in {"current", "当前", "从当前"}:
         return {a: 0 for a in ATTRS}
-    if stage_norm in {"回到 18 岁", "18 岁", "18岁"}:
+    if lp in {"回到 18 岁", "18 岁", "18岁"}:
         return {"confidence": 3, "discipline": 2, "emotion": 3, "talent": 2, "appearance": 1, "social": 2}
-    if stage_norm in {"回到 16 岁", "16 岁", "16岁"}:
+    if lp in {"回到 16 岁", "16 岁", "16岁"}:
         return {"confidence": 2, "discipline": 1, "emotion": 4, "talent": 2, "appearance": 1, "social": 1}
     return {a: 0 for a in ATTRS}
 
@@ -136,14 +136,14 @@ def render_comparison(initial: dict[str, int], ideal_deltas: dict[str, int]) -> 
 def init_profile(
     ideal: str,
     pain: str,
-    stage: str,
+    life_phase: str,
     seed: int | None = None,
     persona: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     rng = random.Random(seed)
     base = {a: rng.randint(40, 60) for a in ATTRS}
     ideal_deltas = compute_ideal_deltas(ideal)
-    bias = stage_bias(stage)
+    bias = life_phase_bias(life_phase)
 
     # “无压力”逻辑：痛点不做负向扣分，只用于生成关注点（focus_areas）
     pain_list = parse_text_list(pain)
@@ -176,7 +176,7 @@ def init_profile(
     profile: dict[str, Any] = {
         "type": "self-care-reboot.profile",
         "created_at": utc_iso(),
-        "stage": stage or "current",
+        "life_phase": life_phase or "current",
         "ideal": ideal.strip(),
         "pain_points": pain_list,
         "attributes": {a: base[a] for a in ATTRS},
@@ -209,10 +209,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Self-care reboot profile manager")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    p_init = sub.add_parser("init", help="Initialize a profile from ideal/pain/stage")
+    p_init = sub.add_parser("init", help="Initialize a profile from ideal/pain/life-phase")
     p_init.add_argument("--ideal", default="", help="Ideal traits text (can be comma-separated)")
     p_init.add_argument("--pain", default="", help="Current pain points (optional)")
-    p_init.add_argument("--stage", default="current", help="Start stage: current / 回到 18 岁 / 回到 16 岁")
+    p_init.add_argument(
+        "--life-phase",
+        default="current",
+        help="起点设定：current / 回到 18 岁 / 回到 16 岁",
+    )
     p_init.add_argument("--seed", type=int, default=None, help="Random seed for reproducible results")
 
     p_apply = sub.add_parser("apply-deltas", help="Apply deltas to attributes")
@@ -228,18 +232,24 @@ def main() -> None:
         if args.cmd == "init":
             ideal = args_json.get("ideal", args.ideal)
             pain = args_json.get("pain", args.pain)
-            stage = args_json.get("stage", args.stage)
+            life_phase = args_json.get("life_phase", args.life_phase)
             seed = args_json.get("seed", args.seed)
             raw_persona = args_json.get("persona")
             persona = raw_persona if isinstance(raw_persona, dict) else None
-            profile = init_profile(str(ideal or ""), str(pain or ""), str(stage or "current"), seed=seed, persona=persona)
+            profile = init_profile(
+                str(ideal or ""), str(pain or ""), str(life_phase or "current"), seed=seed, persona=persona
+            )
 
             if is_lobster_tool_mode():
                 print_json(
                     envelope_ok(
                         output=[
                             {
-                                "summary": {"action": "init_profile", "stage": profile.get("stage"), "created_at": profile.get("created_at")},
+                                "summary": {
+                                    "action": "init_profile",
+                                    "life_phase": profile.get("life_phase"),
+                                    "created_at": profile.get("created_at"),
+                                },
                                 "items": [profile],
                             }
                         ]

@@ -128,7 +128,7 @@ def growth_report(
     initial_attributes: dict[str, int] | None = None,
     days: int | None = None,
     with_image: bool = False,
-    stage: str | None = None,
+    life_phase: str | None = None,
 ) -> dict[str, Any]:
     report = {
         "type": "self-care-reboot.growth_report",
@@ -142,12 +142,12 @@ def growth_report(
     if with_image and render_avatar is not None:
         from pathlib import Path
 
-        stage_text = stage or "child"
+        life_phase_text = life_phase or "child"
         out_dir = Path("artifacts") / "self-care-reboot"
         out_dir.mkdir(parents=True, exist_ok=True)
         avatar_path = out_dir / f"avatar_{int(days or 0):04d}.png"
         try:
-            render_avatar(report["attributes"], stage=stage_text, output_path=str(avatar_path))
+            render_avatar(report["attributes"], life_phase=life_phase_text, output_path=str(avatar_path))
             report["avatar_image_path"] = str(avatar_path)
         except Exception:
             pass
@@ -179,7 +179,7 @@ def main() -> None:
             initial_raw = args_json.get("initial", args.initial)
             days = args_json.get("days", args.days)
             with_image = bool(args_json.get("with_image", False))
-            stage = args_json.get("stage")
+            life_phase = args_json.get("life_phase")
 
             if attributes_raw is None:
                 raise ValueError("Missing attributes (provide --attributes or args-json.attributes)")
@@ -194,7 +194,7 @@ def main() -> None:
                 initial_attributes=initial,
                 days=days,
                 with_image=with_image,
-                stage=stage,
+                life_phase=life_phase,
             )
 
             if is_lobster_tool_mode():
