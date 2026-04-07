@@ -38,7 +38,7 @@ def sanitize_choice_key(s: str) -> str:
     return (s or "").strip().upper()
 
 #
-# 事件选择系统：生成大量“可选剧情”，A/B/C/D 的加成与 SKILL.md 一致：
+# 事件选择系统：生成大量“可选剧情”，A/B/C/D 的加成与 references/story-events.md 一致：
 # A：自信+8，社交+5
 # B：情绪+5，自律+3
 # C：才华+5，情绪+3
@@ -60,7 +60,7 @@ HINT_BY_KEY: dict[str, str] = {
 
 
 def build_choices() -> list[dict[str, Any]]:
-    # 注意：这里的 text 保持与 SKILL.md 的 A/B/C/D 描述一致，便于用户建立直觉。
+    # 注意：这里的 text 保持与 references/story-events.md 的 A/B/C/D 描述一致，便于用户建立直觉。
     return [
         {"key": "A", "label": "A", "text": "平静解释自己的想法，不卑不亢", "deltas": DELTAS_BY_KEY["A"]},
         {"key": "B", "label": "B", "text": "暂时沉默，会后找合适时机再沟通", "deltas": DELTAS_BY_KEY["B"]},

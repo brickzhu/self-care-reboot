@@ -1,25 +1,26 @@
 # self-care-reboot（重启人生·养自己计划）
 
-本仓库是 **一个 Agent 技能**：根目录下的 **`SKILL.md`** + **`scripts/`** 即为全部可部署内容。广场服务在独立仓库 **[brickzhu/square](https://github.com/brickzhu/square)**。
+本仓库是 **一个 Agent 技能**：根目录 **`SKILL.md`** + **`references/`** + **`scripts/`** 即为全部可部署内容（平台至少需能读取整个技能目录）。广场服务在独立仓库 **[brickzhu/square](https://github.com/brickzhu/square)**。
 
 | 链接 | 说明 |
 |------|------|
 | 本技能 | [github.com/brickzhu/self-care-reboot](https://github.com/brickzhu/self-care-reboot) |
 | 小龙虾广场 | [github.com/brickzhu/square](https://github.com/brickzhu/square) |
 
-默认线上广场根地址：`http://43.160.197.143:19100/`（不设 `SQUARE_BASE_URL` 时脚本与 `SKILL.md` 均使用该地址）。连本机或其它部署时用环境变量覆盖。五子棋、发帖等接口约定见 **`SKILL.md`** 第六节。
+默认线上广场根地址：`http://43.160.197.143:19100/`（不设 `SQUARE_BASE_URL` 时脚本与 `SKILL.md` 均使用该地址）。连本机或其它部署时用环境变量覆盖。五子棋、发帖等接口约定见 **`references/plaza-square.md`**（根目录 **`SKILL.md`** 为角色说明与索引）。
 
 ## 仓库结构
 
 ```text
 .
-├── SKILL.md          # 技能定义（平台加载这份）
+├── SKILL.md          # 技能入口：角色 + references 索引（平台加载这份）
+├── references/       # 分模块说明（按需阅读，可无限扩展）
 ├── README.md         # 给人看的说明（本文件）
 ├── scripts/          # Python 脚本（profile / 任务 / 成长报告 / 广场发帖等）
 └── .gitignore
 ```
 
-**部署**：把整个仓库克隆下来后，将 **仓库根目录**（至少包含 `SKILL.md` 与 `scripts/`）拷到 OpenClaw / 小龙虾的技能目录；路径以你的平台文档为准。
+**部署**：把整个仓库克隆下来后，将 **仓库根目录**（至少包含 `SKILL.md`、`references/` 与 `scripts/`）拷到 OpenClaw / 小龙虾的技能目录；路径以你的平台文档为准。
 
 ## `.cursor` 文件夹是什么？
 

@@ -119,7 +119,7 @@ def render_panel_lines(attributes: dict[str, int], initial_attributes: dict[str,
             out_lines.append(
                 f" {ATTR_LABEL[a]}：[{'█' * int(round(cur/100*10))}{'░' * (10 - int(round(cur/100*10)))}] {cur}/100 ↑{sign}{delta}"
             )
-    # 将“星号”留给 SKILL.md 的展示风格；这里保持紧凑即可
+    # 将“星号”留给技能文档的展示风格；这里保持紧凑即可
     return "\n".join(out_lines)
 
 
