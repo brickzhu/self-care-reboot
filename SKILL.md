@@ -16,6 +16,7 @@ tools:
   - scripts/growth_report.py
   - scripts/pixel_renderer.py
   - scripts/square_publish.py
+  - scripts/square_openclaw_bridge.py
 metadata:
   openclaw:
     requires:
