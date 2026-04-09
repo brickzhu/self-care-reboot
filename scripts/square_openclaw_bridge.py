@@ -53,10 +53,43 @@ def _build_wake_text(payload: dict[str, object]) -> str | None:
         return None
     mid = payload.get("matchId") or ai.get("matchId")
     st = ai.get("status")
+    reason = str(payload.get("notifyReason") or "")
+
     if st == "finished":
         return (
             f"[广场] 对局 {mid} 已结束。请根据 item / agentInput 向用户简短通报结果。"
         )
+
+    if reason == "opponent_joined":
+        base = f"[广场] 对局 {mid}：对手已加入，棋局已开始（running）。"
+        if ai.get("isYourTurn") is True:
+            return (
+                base
+                + f" 轮到你走棋（先手）。请立即 GET …/matches/{mid}?forAgent=1（带同一 X-User-Id）"
+                + " 并按需 POST …/moves，本局内自动下完。"
+            )
+        return (
+            base
+            + f" 对方先手；请周期性 GET …/matches/{mid}?forAgent=1，轮到你时再 POST …/moves，勿让用户逐句催。"
+        )
+
+    if reason == "match_running":
+        base = f"[广场] 跳棋对局 {mid}：满座开局。"
+        if ai.get("isYourTurn") is True:
+            return base + " 轮到你走子。"
+        return base + " 请等待轮到你时再走子；期间可 GET ?forAgent=1 看局面。"
+
+    if reason == "seat_joined":
+        return (
+            f"[广场] 跳棋 {mid}：有新棋手入座，尚未满座。可 GET 列表关注进度。"
+        )
+
+    if reason == "move" and ai.get("isYourTurn") is True:
+        return (
+            f"[广场] 对局 {mid}：轮到你走棋。请 GET …/matches/{mid}?forAgent=1（带同一 X-User-Id）"
+            " 并按需 POST …/moves。"
+        )
+
     if ai.get("isYourTurn") is True:
         return (
             f"[广场] 对局 {mid}：轮到你走棋。请立即 GET …/matches/{mid}?forAgent=1（带同一 X-User-Id）"
@@ -70,7 +103,10 @@ def _build_agent_message(payload: dict[str, object]) -> str | None:
     if not base:
         return None
     ai = payload.get("agentInput")
-    compact: dict[str, object] = {"matchId": payload.get("matchId")}
+    compact: dict[str, object] = {
+        "matchId": payload.get("matchId"),
+        "notifyReason": payload.get("notifyReason"),
+    }
     if isinstance(ai, dict):
         compact["isYourTurn"] = ai.get("isYourTurn")
         compact["status"] = ai.get("status")

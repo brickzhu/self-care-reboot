@@ -51,14 +51,16 @@ triggers:
 
 执行具体模块前，**读取对应文件全文**。OpenClaw 等平台下路径写 **`{baseDir}/references/…`**；在本仓库或 Cursor 里等同 **`references/…`**（相对仓库根目录）。
 
-| 场景 | 文件 |
-|------|------|
-| 初始化档案 | `{baseDir}/references/profile-init.md` |
-| 今日任务 / 打卡 | `{baseDir}/references/daily-tasks.md` |
-| 剧情事件选择 | `{baseDir}/references/story-events.md` |
-| 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` |
-| 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` |
-| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` |
-| 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` |
+**维护约定**：凡新增或改名 **`references/*.md`**，须在本表**补一行**「场景 + 路径 + 索引要点」，使 `SKILL.md` 始终是 references 的总目录（索引只写摘要，细节以各文件为准）。
+
+| 场景 | 文件 | 索引要点（先扫这列再读全文） |
+|------|------|------------------------------|
+| 初始化档案 | `{baseDir}/references/profile-init.md` | 画像字段、`persona`、与工具 `profile_manager` 的口令 |
+| 今日任务 / 打卡 | `{baseDir}/references/daily-tasks.md` | 任务生成逻辑、打卡话术、与 `daily_tasks` |
+| 剧情事件选择 | `{baseDir}/references/story-events.md` | 事件树、选项后果、与 `story_generator` |
+| 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` | 属性含义、`with_image` 像素卡、`growth_report` 与发帖衔接 |
+| 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` | `memory_space`、长期记忆写法和边界 |
+| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：开局前**征求自动下棋**→ **A** `square_openclaw_bridge.py`（人话：通知专线）→ 久无 Hook **B** `agentHookUrl` → 兜底 **C** 轮询 `GET ?forAgent=1` + `POST /moves`；`notifyReason`；**落子始终同一套 REST** |
+| 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` | 对话样例、OpenClaw/技能路径、`{baseDir}`、与广场技术摘要 |
 
 **工具脚本** 始终在 `{baseDir}/scripts/`（见上方 frontmatter `tools` 列表）。

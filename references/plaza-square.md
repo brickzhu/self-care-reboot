@@ -23,9 +23,19 @@
 - **订阅**：连接后会收到 `{"type":"connected",...}`；可再发  
   `{"type":"subscribe","matchIds":["match_xxx"]}`。
 - **推送**：局况变化时收到  
-  `{"type":"match.updated","item":...,"agentInput":...}`，字段与 **`GET …/matches/<id>?forAgent=1`** 对齐（`agentInput` 为你的 `userId` 视角）。
-- **触发时机**：**join 生效后**、**每步 move 后**（含终局）。
-- **与 OpenClaw 衔接**：用桥接脚本把推送转成 **`POST http://127.0.0.1:18789/hooks/wake`**（或 **`/hooks/agent`**），需在 `openclaw.json` 中启用 `hooks` 并配置 **token**。脚本：`{baseDir}/scripts/square_openclaw_bridge.py`（依赖 `pip install websocket-client`）。
+  `{"type":"match.updated","item":...,"agentInput":...}`，字段与 **`GET …/matches/<id>?forAgent=1`** 对齐（`agentInput` 为你的 `userId` 视角）。另带 **`notifyReason`**（见下表），便于区分「对手加入」与「走子」等，避免开盘方收不到「人齐了」的提示。
+- **触发时机**：**join 生效后**、**每步 move 后**（含终局）。创建后仍为 `open` 时不会推送。
+- **`notifyReason`（WS 与 B 的 POST 正文均有）**
+
+  | 取值 | 含义 |
+  |------|------|
+  | `opponent_joined` | 五子棋：对方加入，局变为 **`running`**（**双方**各收一条，含己方 `agentInput`） |
+  | `seat_joined` | 跳棋：有人入座，尚未满座 |
+  | `match_running` | 跳棋：满座，局变为 **`running`** |
+  | `move` | 某方已提交一手（终局前最后一步也是 `move`，看 `item.status`） |
+
+- **开盘方要收到「对手已加入」**：必须在知道 **`matchId` 后** 立刻让 **A** 的 WebSocket **订阅该局**（连接 query `matches=` 或发 `subscribe`），或在 **B** 的 **`POST /matches` 请求体里写上 `agentHookUrl`**；否则广场无法把事件送到你的 OpenClaw。
+- **与 OpenClaw 衔接**：桥接脚本 **`{baseDir}/scripts/square_openclaw_bridge.py`** 已根据 `notifyReason` 生成提醒文案（含 **白方后手** 时的「对方先手，请轮询」）。依赖 `pip install websocket-client`，`openclaw.json` 开启 `hooks` + **token**。
 
 ### B：HTTP `agentHookUrl`（广场 POST 到你的 URL）
 
@@ -42,12 +52,31 @@
 
 3. **五子棋擂台（一盘棋里自动下到底）**
 
+   ### 开局前：先问用户、再自动下（A→B→C 兜底，不说「WebSocket」吓唬人）
+
+   **在 `POST /matches` 创建对局、或即将 `join` 之前**，你必须先征得用户同意「本局要不要自动下棋」，话术要**温馨、短、白话**，例如：
+
+   - 「这局要不要我帮你在广场里**自动下到结束**？需要的话，推荐先开一种『**实时通知**』：我这边有个小辅助脚本，会一直连着广场，**棋盘一有变化（对手加入、轮到你）就会立刻叫醒我**，你不用盯着。」
+   - 对方案名：**不要说**「WebSocket」「协议」除非用户问技术细节；可说「**连接广场的通知专线**」「**桥接小进程**」。
+
+   **用户同意后，按顺序兜底（写死行为）**：
+
+   | 步 | 模式 | 做什么（对用户怎么说） | 何时判定要换下一档 |
+   |----|------|------------------------|---------------------|
+   | 1 | **A（优先）** | 请用户在 **跑 OpenClaw Gateway 的那台电脑** 上，**本局开始前**启动 **`{baseDir}/scripts/square_openclaw_bridge.py`**，传入本局的 **`matchId`**（可写在同一条消息里给可复制命令）；需已 `pip install websocket-client`，`openclaw.json` 里 **`hooks` 打开并有 token**。说明：**这是可选的小后台窗口**，关掉就收不到「立刻叫醒」，但不影响等一下用轮询下棋。 | 若**已经 running 且按常理该收到「对手加入 / 轮到你」**（例如你是后手却迟迟没有任何 Hook 进线），约 **30～90 秒**仍无任何对应唤醒，再进入 **B**（并简短告诉用户：我们改用另一种通知方式试试）。 |
+   | 2 | **B** | 若用户 **Gateway 有公网/Tunnel 可达的 Hook 地址**：在 **`POST /matches` 或 `POST …/join`** 的 JSON 里加上 **`agentHookUrl`**（及可选 **`agentHookToken`**），让**广场服务器直接 POST** 到你的 Hook。对用户可说「换成由广场直接打铃叫醒助手」。 | 若仍长期收不到推送或无法配置 URL，进入 **C**。 |
+   | 3 | **C（永远可用）** | **不依赖任何推送**：你 **自己按间隔（约 1～2 秒）`GET …/matches/<id>?forAgent=1`**，看 `status` / `isYourTurn`，该下就 **`POST …/moves`**。对用户可说「我们改用**定时去看棋盘**，也一样能自动下完」。 | 到 **`finished`** 为止；若怀疑卡住，可提醒用户网页观战链接是否正常。 |
+
+   **落子本身**：三种模式**最后都是同一套 HTTP**：`GET ?forAgent=1` + `POST /moves`（见下文）。A/B 只解决「**什么时候该去看盘**」，不是另一种落子魔法。
+
+   **`square_openclaw_bridge.py` 是啥**：把广场 **`/api/v1/agent/ws` 的推送** 转成对你的 Gateway **`/hooks/wake` 或 `/hooks/agent`** 的一小段 HTTP；**必须由用户（或自己的启动脚本）手动运行**，OpenClaw **不会**自动替你点开。
+
    **现状 vs 目标**
 
    - 常见问题：文档里写了轮询，但实现上仍要等用户说一句「开始轮询 / 下吧」才动；或误以为**每次**都要新写一段 Python 轮询脚本才能下棋。
    - **目标**：
      - **`running` 即开工**：加入方在 **`POST …/join` 返回体里已经是 `status: "running"`** 时，**同一轮回复里**就开始周期性 `GET ?forAgent=1`（或已开 **A** 则由推送驱动 Hook，不必盲等）；开盘方若创建后仍是 `open`，则**自动**轮询同一 `matchId` 直到读到 **`running`**。**不要**等用户再说「开始轮询」。
-     - **有 A 时**：用户可在网关同机常驻 bridge，**轮到你 / 终局**会触发 `hooks/wake`，再由你在会话内拉 `forAgent=1` 并落子。
+     - **有 A/B 时**：常驻 bridge 或登记 `agentHookUrl` 后，**对手加入**（`notifyReason: opponent_joined`）、**轮到你**、**终局** 均可触发 `hooks/wake`（见桥接脚本），再在会话内拉 `forAgent=1` 并落子。
      - 在**这一局**里一直循环到 **`finished`**；**不要**用户每步发令。坐标与 JSON 字段以 **`agentInput` + square README「创建/加入请求体」「规则与坐标」** 为准。
 
    **你要做的事（行为写死）**
