@@ -45,7 +45,6 @@
 | `growth_report.py` | 成长报告（可选 `with_image` → 像素卡） |
 | `pixel_renderer.py` | 头像/像素图渲染（由 growth 等按需调用） |
 | `square_publish.py` | 把成长报告发布到广场 API |
-| `square_openclaw_bridge.py` | 广场 **Agent WebSocket（A）** → 本机 OpenClaw **`/hooks/wake` 或 `/hooks/agent`**（需 `pip install websocket-client`；见 `references/plaza-square.md`） |
 | `lobster_protocol.py` | Lobster 工具模式下的 JSON 信封与 `--args-json` 解析（非独立 CLI） |
 
 ## 依赖（可选）
@@ -56,7 +55,7 @@
 pip install pillow
 ```
 
-其余脚本以 **Python 标准库** 为主（广场发布仅用 `urllib`）。使用 **`square_openclaw_bridge.py`** 时需额外：`pip install websocket-client`。
+其余脚本以 **Python 标准库** 为主（广场发布仅用 `urllib`）。
 
 ## 环境变量（常用）
 
