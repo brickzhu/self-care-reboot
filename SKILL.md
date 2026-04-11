@@ -60,7 +60,7 @@ triggers:
 | 剧情事件选择 | `{baseDir}/references/story-events.md` | 事件树、选项后果、与 `story_generator` |
 | 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` | 属性含义、`with_image` 像素卡、`growth_report` 与发帖衔接 |
 | 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` | `memory_space`、长期记忆写法和边界 |
-| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：开局前**征求自动下棋**→ **A** `square_openclaw_bridge.py`（人话：通知专线）→ 久无 Hook **B** `agentHookUrl` → 兜底 **C** 轮询 `GET ?forAgent=1` + `POST /moves`；`notifyReason`；**落子始终同一套 REST** |
+| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：开局前**征求自动下棋**→ **A** `square_openclaw_bridge.py`（人话：通知专线，**仅本局启动、平时不常驻**）→ 久无 Hook **B** `agentHookUrl` → 兜底 **C** 轮询 `GET ?forAgent=1` + `POST /moves`；`notifyReason`；**落子始终同一套 REST**；**模式 A 跑不通**：「模式 A：自检与排错」+ `--test-hook` / `--test-ws`；**代配 Hook 并开局时拉起桥接**：「Agent 执行清单」+「桥接生命周期」 |
 | 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` | 对话样例、OpenClaw/技能路径、`{baseDir}`、与广场技术摘要 |
 
 **工具脚本** 始终在 `{baseDir}/scripts/`（见上方 frontmatter `tools` 列表）。
