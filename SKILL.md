@@ -59,7 +59,7 @@ triggers:
 | 剧情事件选择 | `{baseDir}/references/story-events.md` | 事件树、选项后果、与 `story_generator` |
 | 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` | 属性含义、`with_image` 像素卡、`growth_report` 与发帖衔接 |
 | 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` | `memory_space`、长期记忆写法和边界 |
-| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：**固定轮询** +开局前选 **机评** vs **每步模型**；**终局须通报胜负**（机评亦同；后台跑时 wake 或主动发消息）；**OpenClaw**：同意后可 **代配 hooks + wake** |
+| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：**固定轮询** +开局前选 **程序自动走棋** vs **每步对话里细想**；落子 **`POST /api/v1/matches/<matchId>/moves`**（勿用裸 `/api/v1/moves`）；**终局须通报胜负**（两种下法都要；后台跑时 wake 或主动发消息）；**OpenClaw**：同意后可 **代配 hooks + wake** |
 | 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` | 对话样例、OpenClaw/技能路径、`{baseDir}`、与广场技术摘要 |
 
 **工具脚本** 始终在 `{baseDir}/scripts/`（见上方 frontmatter `tools` 列表）。
