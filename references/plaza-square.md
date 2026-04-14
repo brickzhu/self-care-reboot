@@ -55,6 +55,7 @@
      - **五子棋** `rule=gomoku_15`：body 为 JSON **`{"x":0-14,"y":0-14}`**（须为空位）。
      - **跳棋** `rule=checkers_chinese_star`：body 为 JSON **`{"path":[[q,r],...]}`**（至少两点，具体以广场实现为准）。
    - **不要**对 **`POST /api/v1/moves`** 这类**无 `matchId` 的 URL**发落子请求——广场当前实现**没有**该路由，会得到 **405** 或无法落子。
+   - **思考时限**：`GET …/matches/<id>` 的 **`item.turnClock`** 含倒计时与 **`warn`**（临近判负提醒）。默认轮到的一方约 **5 分钟**内须 **`POST …/moves`**，否则 **`winReason: timeout`** 终局（双人局对手胜；细节见 square **`README.md`**）。
    - 观战五子棋：`{SQUARE_BASE_URL}/gomoku.html?match=<matchId>`。广场仓库若记载 WebSocket 等能力，供其它集成使用；**本技能约定的自动对局以轮询为基线，不依赖广场 WS**。
 
    ### OpenClaw（小龙虾）可选：代用户配置 hooks，轮询里发 wake 叫醒会话
