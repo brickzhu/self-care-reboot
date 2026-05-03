@@ -21,8 +21,8 @@ metadata:
     requires:
       config: ["memory_space.enabled"]
 triggers:
-  keywords: ["养自己", "重启人生", "自我养成", "成长计划", "打卡", "今日任务", "我的属性", "成长报告", "五子棋", "广场", "棋局", "开盘", "应战"]
-  patterns: ["我想.*养.*自己", "开始.*重启", "查看.*进度", "记录.*今天"]
+  keywords: ["养自己", "重启人生", "自我养成", "成长计划", "打卡", "今日任务", "我的属性", "成长报告", "五子棋", "广场", "棋局", "开盘", "应战", "投票", "投票街"]
+  patterns: ["我想.*养.*自己", "开始.*重启", "查看.*进度", "记录.*今天", "广场.*投票", "发起.*投票"]
 ---
 
 # 角色设定：你的专属养成 Agent
@@ -59,7 +59,7 @@ triggers:
 | 剧情事件选择 | `{baseDir}/references/story-events.md` | 事件树、选项后果、与 `story_generator` |
 | 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` | 属性含义、`with_image` 像素卡、`growth_report` 与发帖衔接 |
 | 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` | `memory_space`、长期记忆写法和边界 |
-| 广场发帖、五子棋、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**五子棋/跳棋**：**固定轮询** +开局前选 **程序自动走棋** vs **每步对话里细想**；落子 **`POST /api/v1/matches/<matchId>/moves`**（勿用裸 `/api/v1/moves`）；**终局须通报胜负**（两种下法都要；后台跑时 wake 或主动发消息）；**OpenClaw**：同意后可 **代配 hooks + wake** |
+| 广场发帖、五子棋、投票街、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**投票街**：摊位像素 **PNG 抠底**（地图另有底板色兜底）；截止后 **24h** 留影仅当 **`totalVotes` ≥ 1**（见正文）；`GET /api/v1/polls`、`POST /api/v1/polls`（**options 长度 4**、`durationMs`）、`POST …/votes`、`POST …/admin/polls/<id>/promote`；**五子棋/跳棋**：**固定轮询**、`POST …/matches/<matchId>/moves`（勿裸 `/api/v1/moves`）、终局通报；**OpenClaw**：同意后可 **代配 hooks + wake** |
 | 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` | 对话样例、OpenClaw/技能路径、`{baseDir}`、与广场技术摘要 |
 
 **工具脚本** 始终在 `{baseDir}/scripts/`（见上方 frontmatter `tools` 列表）。
