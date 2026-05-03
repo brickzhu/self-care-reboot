@@ -11,3 +11,7 @@ Thumbs.db
 # 本地交接笔记（不提交远程，随协作进度更新）
 HANDOFF.md
 
+# 本地生成的像素卡/报告配图（skills 运行时产出）
+artifacts/
+scripts/artifacts/
+
