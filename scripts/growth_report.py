@@ -24,9 +24,9 @@ from lobster_protocol import (
 )
 
 try:
-    from pixel_renderer import render_avatar  # type: ignore
+    from pixel_renderer import render_avatar_card  # type: ignore
 except Exception:
-    render_avatar = None
+    render_avatar_card = None
 
 ATTRS = ["confidence", "discipline", "emotion", "talent", "appearance", "social"]
 ATTR_LABEL = {
@@ -139,7 +139,7 @@ def growth_report(
         "badges": badges_from_attributes(attributes),
         "panel_text": build_summary_text(attributes, days=days, initial_attributes=initial_attributes),
     }
-    if with_image and render_avatar is not None:
+    if with_image and render_avatar_card is not None:
         from pathlib import Path
 
         life_phase_text = life_phase or "child"
@@ -147,7 +147,11 @@ def growth_report(
         out_dir.mkdir(parents=True, exist_ok=True)
         avatar_path = out_dir / f"avatar_{int(days or 0):04d}.png"
         try:
-            render_avatar(report["attributes"], life_phase=life_phase_text, output_path=str(avatar_path))
+            render_avatar_card(
+                attributes=report["attributes"],
+                life_phase=life_phase_text,
+                output_path=str(avatar_path),
+            )
             report["avatar_image_path"] = str(avatar_path)
         except Exception:
             pass

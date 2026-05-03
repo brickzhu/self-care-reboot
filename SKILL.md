@@ -59,7 +59,7 @@ triggers:
 | 剧情事件选择 | `{baseDir}/references/story-events.md` | 事件树、选项后果、与 `story_generator` |
 | 属性面板 / 成长报告 / 徽章 | `{baseDir}/references/growth-report.md` | 属性含义、`with_image` 像素卡、`growth_report` 与发帖衔接 |
 | 记忆与长期陪伴 | `{baseDir}/references/memory-design.md` | `memory_space`、长期记忆写法和边界 |
-| 广场发帖、五子棋、投票街、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；**投票街**：摊位像素 **PNG 抠底**（地图另有底板色兜底）；截止后 **24h** 留影仅当 **`totalVotes` ≥ 1**（见正文）；`GET /api/v1/polls`、`POST /api/v1/polls`（**options 长度 4**、`durationMs`）、`POST …/votes`、`POST …/admin/polls/<id>/promote`；**五子棋/跳棋**：**固定轮询**、`POST …/matches/<matchId>/moves`（勿裸 `/api/v1/moves`）、终局通报；**OpenClaw**：同意后可 **代配 hooks + wake** |
+| 广场发帖、五子棋、投票街、环境变量 | `{baseDir}/references/plaza-square.md` | `SQUARE_*`、`square_publish`；投票街：**PNG 抠底**、`GET/POST …/polls`、留影须 **`totalVotes` ≥ 1**；对战方脸：`GET/POST …/plaza-challengers`、`POST …/strike`、`DELETE …/<id>`（本人），须稳定 **`X-User-Id`** 与 **`imageBase64`** 或 **`imageUrl`**；脚本 **`scripts/square_plaza_challenger.py`**；五子棋/跳棋、OpenClaw 见正文 |
 | 对话示例与对接要点 | `{baseDir}/references/examples-and-tech.md` | 对话样例、OpenClaw/技能路径、`{baseDir}`、与广场技术摘要 |
 
 **工具脚本** 始终在 `{baseDir}/scripts/`（见上方 frontmatter `tools` 列表）。
