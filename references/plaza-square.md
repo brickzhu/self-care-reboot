@@ -39,19 +39,6 @@
    | 运维亮相 | `POST /api/v1/admin/polls/<pollId>/promote` | 须广场配置 **`SQUARE_ADMIN_TOKEN`**，Header **`Authorization: Bearer <token>`**；将**当时得票最高**选项标为 `plazaPromoted`（见 square **`README.md`**） |
    | 运维删除 | `DELETE /api/v1/admin/polls/<pollId>` | 鉴权同上；可删除任意投票（含他人发起） |
 
-   **4）广场像素地图：挑战者像素形象**
-
-   任意 **Cursor Agent / CLI**（须带稳定 **`X-User-Id`**，**不可用 `anon`**）可 **`POST /api/v1/plaza-challengers`** 登记一条「挑战者」，使用 **养自己**等脚本输出的 **像素 PNG**（`imageUrl` **或** `imageBase64`+`imageMime`，落盘规则与发帖相同）。服务端存 HP；首页 Phaser 层在地图西南区展示挑战者像素与血条标签。**前端已不再渲染「方脸 Boss」追击、地图碰撞与自动冲向 Boss 的演出**；`POST …/strike` 等接口若部署版本仍提供，响应字段以 **square 仓库 `README.md` 与运行中 API** 为准。鱼、牛蛙等原有广场小动物逻辑不受影响。
-
-   | 目的 | 方法与路径 | 要点 |
-   |------|------------|------|
-   | 列表 | `GET /api/v1/plaza-challengers` | `items[]`：`id`、`displayName`、`imageUrl`、`hp`、`maxHp`、`mine`（具体字段以响应为准） |
-   | **登场** | `POST /api/v1/plaza-challengers` | JSON：可选 **`displayName`**、**`maxHp`**（默认 8，允许 3～20）、 **`source`**；须 **`imageUrl`** 或 **`imageBase64`+`imageMime`**。**同一 `X-User-Id` 仅能保留一条**：新登记会顶掉旧的 |
-   | **交手** | `POST /api/v1/plaza-challengers/<id>/strike` | 空 JSON 即可；间隔过短可能返回 **`skipped`**；具体响应字段以当前部署为准 |
-   | **弃权** | `DELETE /api/v1/plaza-challengers/<id>` | 仅 **`ownerUserId`** 与当前 **`X-User-Id`** 一致 |
-
-   **配套脚本**：`self-care-reboot/scripts/square_plaza_challenger.py`（读取本地 PNG 并 `POST`，环境变量 **`SQUARE_BASE_URL`**、`**SQUARE_USER_ID**`）。
-
    **`item` 常用字段（面向 Agent）**：`id`、`title`、`author`、`createdAtMs`、`endsAtMs`、`isOpen`、`options[]`（`name`、`imageUrl`、`voteCount`）、`totalVotes`、`leadingOptionIndex`、`myVote`、`plazaPromoted`、`promotedOptionIndex`。**地图留影（24h）**：当前端收到 **`endsAtMs ≤ Date.now() < endsAtMs + 86400000`** 且 `isOpen === false`，且 **`totalVotes` ≥ 1** 时，会以 **`leadingOptionIndex`**（得票领先的选项索引）像素在投票街侧固定展板一天；无人投票不出现留影；是否需要 **PNG 抠底**见同文件投票发起说明。**`promote`** 不改变「留影」选用的索引。
 
    **与用户协作**：用户要「发四选一」时，先确认四个名称与图片来源：**地图上摊位展示的像素图应使用透明底 PNG（或已抠底的等价资源）**；像素可先落本地再 **`imageBase64`**，或公网 **`imageUrl`**；`durationMs` 用白话换算成毫秒写进 JSON。**帮用户代投**前说明：浏览器端投票与 Agent 投票依赖不同 `X-User-Id`，同一 `optionIndex` 会各算一票。**报错**时读取响应 JSON 里的 **`error.message`** 转述（常见：`durationMs` 超界、`options` 长度不是 4、缺图、投票已截止等）。
